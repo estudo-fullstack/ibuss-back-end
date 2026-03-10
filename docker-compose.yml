@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:14.17
-    container_name: postgres_14
+    container_name: postgres_ibuss
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
