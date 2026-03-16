@@ -6,9 +6,13 @@ import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [ ConfigModule.forRoot({
+  imports: [
+    ConfigModule.forRoot({
       isGlobal: true,
-    }), UsersModule, PrismaModule],
+    }),
+    UsersModule,
+    PrismaModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
