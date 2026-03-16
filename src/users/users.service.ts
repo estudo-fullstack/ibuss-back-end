@@ -7,9 +7,9 @@ import bcrypt from 'bcrypt';
 @Injectable()
 export class UsersService {
   constructor(private prismaService: PrismaService) {}
-  
+
   async create(createUserDto: CreateUserDto) {
-    console.log(createUserDto)
+    console.log(createUserDto);
     const passwordHash = await bcrypt.hash(createUserDto.password, 10);
     return this.prismaService.user.create({
       data: {
