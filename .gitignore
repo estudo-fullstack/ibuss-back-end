@@ -56,3 +56,74 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 src/generated/prisma
+
+# generator client {
+#   provider = "prisma-client-js"
+#   output = "../src/generated/prisma"
+#   moduleFormat    = "cjs"
+# }
+
+# datasource db {
+#   provider = "postgresql"  
+# }
+
+# model User {
+#   id        String @id @default(uuid())
+#   name      String @db.VarChar(100)
+#   cpf       String @db.VarChar(11) @unique
+#   email     String @unique
+#   phone_number String @db.VarChar(20)
+#   password  String
+#   createdAt DateTime @default(now())
+#   updatedAt DateTime @updatedAt
+# }   
+
+# model Bus_Companie {
+#   id        String @id @default(uuid())
+#   name      String @db.VarChar(150)
+#   cmpj      String @db.VarChar(14) @unique
+#   createdAt DateTime @default(now())
+#   updatedAt DateTime @updatedAt
+# }
+
+# model Route {
+#   id            String @id @default(uuid())
+#   id            fk @Bus_Companie
+#   router_number String @db.VarChar(10)
+#   orign         String @db.VarChar(50)
+#   destination   String @db.VarChar(50)
+#   trip_duration Integer
+#   price         Decimal(10,2)
+#   createdAt DateTime @default(now())
+#   updatedAt DateTime @updatedAt
+# }
+
+# model Schedule {
+#   id              String @id @default(uuid())
+#   id              fk @Bus_Companie
+#   id              fk @Route
+#   day_of_week     smallint(6)
+#   departure_time  DateTime
+#   is_active       boolean
+#   createdAt DateTime @default(now())
+#   updatedAt DateTime @updatedAt
+# }
+
+# model Ticket {
+#   id              String @id @default(uuid())
+#   id              fk @Bus_Companie
+#   id              fk @Route
+#   id              fk @Wallet_Transaction
+#   purchase_price  Decimal(10,2)
+#   status          String
+#   purchase_at     DateTime @purchasedAt
+#   used_at         DateTime @usedAt
+# }
+
+# model Wallet_Transaction {
+#   id                  String @id @default(uuid())
+#   id                  fk @User
+#   transaction_amount  Decimal(10,2)
+#   transaction_type    String, Integer || output
+#   createdAt DateTime @default(now())
+# }

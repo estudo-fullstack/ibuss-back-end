@@ -1,11 +1,11 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output = "../src/generated/prisma"
   moduleFormat    = "cjs"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql"  
 }
 
 model User {
@@ -17,4 +17,87 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}   
+}
+
+model BusCompanie {
+  id        String @id @default(uuid())
+  name      String @db.VarChar(150)
+  cnpj      String @db.VarChar(14) @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routes    Route[]
+  schedules Schedule[]
+  tickets   Ticket[]
+}
+
+model Route {
+  id            String @id @default(uuid())
+
+  companyId     String
+  company       BusCompanie @relation(fields: [companyId], references: [id])
+
+  route_number  String @db.VarChar(10)
+  origin        String @db.VarChar(50)
+  destination   String @db.VarChar(50)
+
+  trip_duration Int
+  price         Decimal @db.Decimal(10,2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schedules Schedule[]
+  tickets   Ticket[]
+}
+
+model Schedule {
+  id String @id @default(uuid())
+
+  companyId String
+  company   BusCompanie @relation(fields: [companyId], references: [id])
+
+  routeId String
+  route   Route @relation(fields: [routeId], references: [id])
+
+  day_of_week Int
+  departure_time DateTime
+  is_active Boolean
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Ticket {
+  id String @id @default(uuid())
+
+  companyId String
+  company   BusCompanie @relation(fields: [companyId], references: [id])
+
+  routeId String
+  route   Route @relation(fields: [routeId], references: [id])
+
+  walletTransactionId String
+  walletTransaction   WalletTransaction @relation(fields: [walletTransactionId], references: [id])
+
+  purchase_price Decimal @db.Decimal(10,2)
+  status String
+
+  purchase_at DateTime
+  used_at DateTime?
+
+}
+
+model WalletTransaction {
+  id String @id @default(uuid())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  transaction_amount Decimal @db.Decimal(10,2)
+  transaction_type String
+
+  createdAt DateTime @default(now())
+
+  tickets Ticket[]
+}
