@@ -1,11 +1,11 @@
 generator client {
   provider = "prisma-client-js"
-  output = "../src/generated/prisma"
-  moduleFormat    = "cjs"
+  output   = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
-  provider = "postgresql"  
+  provider = "postgresql"
 }
 
 model User {
@@ -17,9 +17,12 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  tickets   Ticket[]
+  transactions WalletTransaction[]
 }
 
-model BusCompanie {
+model BusCompany {
   id        String @id @default(uuid())
   name      String @db.VarChar(150)
   cnpj      String @db.VarChar(14) @unique
@@ -27,15 +30,13 @@ model BusCompanie {
   updatedAt DateTime @updatedAt
 
   routes    Route[]
-  schedules Schedule[]
-  tickets   Ticket[]
 }
 
 model Route {
   id            String @id @default(uuid())
 
   companyId     String
-  company       BusCompanie @relation(fields: [companyId], references: [id])
+  company       BusCompany @relation(fields: [companyId], references: [id])
 
   route_number  String @db.VarChar(10)
   origin        String @db.VarChar(50)
@@ -54,9 +55,6 @@ model Route {
 model Schedule {
   id String @id @default(uuid())
 
-  companyId String
-  company   BusCompanie @relation(fields: [companyId], references: [id])
-
   routeId String
   route   Route @relation(fields: [routeId], references: [id])
 
@@ -71,13 +69,13 @@ model Schedule {
 model Ticket {
   id String @id @default(uuid())
 
-  companyId String
-  company   BusCompanie @relation(fields: [companyId], references: [id])
+  userId String
+  user   User @relation(fields: [userId], references: [id])
 
   routeId String
   route   Route @relation(fields: [routeId], references: [id])
 
-  walletTransactionId String
+  walletTransactionId String @unique
   walletTransaction   WalletTransaction @relation(fields: [walletTransactionId], references: [id])
 
   purchase_price Decimal @db.Decimal(10,2)
@@ -85,7 +83,6 @@ model Ticket {
 
   purchase_at DateTime
   used_at DateTime?
-
 }
 
 model WalletTransaction {
@@ -99,5 +96,5 @@ model WalletTransaction {
 
   createdAt DateTime @default(now())
 
-  tickets Ticket[]
+  ticket Ticket?
 }
