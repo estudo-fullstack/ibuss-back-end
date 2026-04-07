@@ -28,7 +28,7 @@ export class UsersController {
     return this.usersService.updatePassword(id, updateUserPasswordDto);
   }
 
-  // @Patch(":id")
+  // @Patch("deactivate/:id")
   // deactivateUser(@Param("id") id: string) {
   //   return this.usersService.deactivateUser(id);
   // }
