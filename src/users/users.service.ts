@@ -4,7 +4,6 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import bcrypt from "bcrypt";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
-import { UserStatus } from "../generated/prisma/enums";
 
 @Injectable()
 export class UsersService {
@@ -74,7 +73,7 @@ export class UsersService {
   async deactivateUser(id: string) {
     return this.prismaService.user.update({
       data: {
-        status: INACTIVE,
+        status: "INACTIVE",
       },
       where: {
         id: id,
@@ -90,7 +89,7 @@ export class UsersService {
   async suspendUser(id: string) {
     return this.prismaService.user.update({
       data: {
-        status: SUSPENDED,
+        status: "SUSPENDED",
       },
       where: {
         id: id,
