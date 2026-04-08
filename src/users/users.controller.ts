@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  ParseUUIDPipe,
+  NotFoundException,
+  InternalServerErrorException,
+} from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -14,22 +24,48 @@ export class UsersController {
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.usersService.findOne(id);
+  findOne(@Param("id", new ParseUUIDPipe()) id: string) {
+    try {
+      return this.usersService.findOne(id);
+    } catch (error) {
+      if (error.code === "P2025") {
+        throw new NotFoundException("User not found");
+      } else throw new InternalServerErrorException("An error occurred while updating the user");
+    }
   }
 
   @Patch(":id")
-  update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
+  update(@Param("id", new ParseUUIDPipe()) id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
 
   @Patch("password/:id")
-  updatePassword(@Param("id") id: string, @Body() updateUserPasswordDto: UpdateUserPasswordDto) {
+  updatePassword(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body() updateUserPasswordDto: UpdateUserPasswordDto
+  ) {
     return this.usersService.updatePassword(id, updateUserPasswordDto);
   }
 
-  // @Patch("deactivate/:id")
-  // deactivateUser(@Param("id") id: string) {
-  //   return this.usersService.deactivateUser(id);
-  // }
+  @Patch("deactivate/:id")
+  deactivateUser(@Param("id", new ParseUUIDPipe()) id: string) {
+    try {
+      return this.usersService.deactivateUser(id);
+    } catch (error) {
+      if (error.code === "P2025") {
+        throw new NotFoundException("User not found");
+      } else throw new InternalServerErrorException("An error occurred while updating the user");
+    }
+  }
+
+  @Patch("suspend/:id")
+  suspendUser(@Param("id", new ParseUUIDPipe()) id: string) {
+    try {
+      return this.usersService.suspendUser(id);
+    } catch (error) {
+      if (error.code === "P2025") {
+        throw new NotFoundException("User not found");
+      } else throw new InternalServerErrorException("An error occurred while updating the user");
+    }
+  }
 }
