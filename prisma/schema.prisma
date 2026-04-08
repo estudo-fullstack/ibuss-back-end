@@ -89,7 +89,8 @@ model Ticket {
   purchasePrice Decimal @db.Decimal(10,2)
   status String
 
-  purchaseAt DateTime?
+  purchaseAt DateTime
+  usedAt DateTime?
 }
 
 model WalletTransaction {
