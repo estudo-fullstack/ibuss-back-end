@@ -8,13 +8,21 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+}
+
 model User {
-  id        String @id @default(uuid())
-  name      String @db.VarChar(100)
-  cpf       String @db.VarChar(11) @unique
-  email     String @unique
-  phone_number String @db.VarChar(20)
+  id        String    @id @default(uuid())
+  name      String    @db.VarChar(100)
+  cpf       String    @db.VarChar(11) @unique
+  email     String    @unique
+  phoneNumber String @db.VarChar(20)
   password  String
+  status    UserStatus @default(ACTIVE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -38,11 +46,11 @@ model Route {
   companyId     String
   company       BusCompany @relation(fields: [companyId], references: [id])
 
-  route_number  String @db.VarChar(10)
+  routeNumber  String @db.VarChar(10)
   origin        String @db.VarChar(50)
   destination   String @db.VarChar(50)
 
-  trip_duration Int
+  tripDuration Int
   price         Decimal @db.Decimal(10,2)
 
   createdAt DateTime @default(now())
@@ -58,9 +66,9 @@ model Schedule {
   routeId String
   route   Route @relation(fields: [routeId], references: [id])
 
-  day_of_week Int
-  departure_time DateTime
-  is_active Boolean
+  dayOfWeek Int
+  departureTime DateTime
+  isActive Boolean
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,11 +86,11 @@ model Ticket {
   walletTransactionId String @unique
   walletTransaction   WalletTransaction @relation(fields: [walletTransactionId], references: [id])
 
-  purchase_price Decimal @db.Decimal(10,2)
+  purchasePrice Decimal @db.Decimal(10,2)
   status String
 
-  purchase_at DateTime
-  used_at DateTime?
+  purchaseAt DateTime
+  usedAt DateTime?
 }
 
 model WalletTransaction {
@@ -91,8 +99,8 @@ model WalletTransaction {
   userId String
   user   User @relation(fields: [userId], references: [id])
 
-  transaction_amount Decimal @db.Decimal(10,2)
-  transaction_type String
+  transactionAmount Decimal @db.Decimal(10,2)
+  transactionType String
 
   createdAt DateTime @default(now())
 
