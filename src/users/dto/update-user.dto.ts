@@ -12,5 +12,5 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
    */
   name?: string;
   email?: string;
-  phone_number?: string;
+  phoneNumber?: string;
 }
