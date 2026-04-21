@@ -19,14 +19,23 @@ export class UsersService {
       select: {
         name: true,
         email: true,
-        phone_number: true,
+        phoneNumber: true,
       },
     });
   }
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} user`;
-  // }
+  findOne(id: string) {
+    return this.prismaService.user.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        name: true,
+        email: true,
+        phoneNumber: true,
+      },
+    });
+  }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     try {
@@ -73,7 +82,35 @@ export class UsersService {
     }
   }
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} user`;
-  // }
+  async deactivateUser(id: string) {
+    return this.prismaService.user.update({
+      data: {
+        status: "INACTIVE",
+      },
+      where: {
+        id: id,
+      },
+      select: {
+        name: true,
+        email: true,
+        phoneNumber: true,
+      },
+    });
+  }
+
+  async suspendUser(id: string) {
+    return this.prismaService.user.update({
+      data: {
+        status: "SUSPENDED",
+      },
+      where: {
+        id: id,
+      },
+      select: {
+        name: true,
+        email: true,
+        phoneNumber: true,
+      },
+    });
+  }
 }
