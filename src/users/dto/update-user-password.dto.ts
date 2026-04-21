@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+import { IsNotEmpty, MinLength } from "class-validator";
+
 export class UpdateUserPasswordDto {
-  password: string;
+  @IsNotEmpty()
+  @MinLength(5)
+  password!: string;
 }
