@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import bcrypt from "bcrypt";
@@ -37,37 +37,49 @@ export class UsersService {
     });
   }
 
-  update(id: string, updateUserDto: UpdateUserDto) {
-    return this.prismaService.user.update({
-      data: {
-        ...updateUserDto,
-      },
-      where: {
-        id: id,
-      },
-      select: {
-        name: true,
-        email: true,
-        phoneNumber: true,
-      },
-    });
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    try {
+      return await this.prismaService.user.update({
+        data: {
+          ...updateUserDto,
+        },
+        where: {
+          id: id,
+        },
+        select: {
+          name: true,
+          email: true,
+          phone_number: true,
+        },
+      });
+    } catch (error) {
+      if (error.code === "P2025") {
+        throw new NotFoundException("User not found");
+      } else throw new InternalServerErrorException("An error occurred while updating the user");
+    }
   }
 
   async updatePassword(id: string, updateUserPasswordDto: UpdateUserPasswordDto) {
-    const passwordHash = await bcrypt.hash(updateUserPasswordDto.password, 10);
-    return this.prismaService.user.update({
-      data: {
-        password: passwordHash,
-      },
-      where: {
-        id: id,
-      },
-      select: {
-        name: true,
-        email: true,
-        phoneNumber: true,
-      },
-    });
+    try {
+      const passwordHash = await bcrypt.hash(updateUserPasswordDto.password, 10);
+      return this.prismaService.user.update({
+        data: {
+          password: passwordHash,
+        },
+        where: {
+          id: id,
+        },
+        select: {
+          name: true,
+          email: true,
+          phone_number: true,
+        },
+      });
+    } catch (error) {
+      if (error.code === "P2025") {
+        throw new NotFoundException("User not found");
+      } else throw new InternalServerErrorException("An error occurred while updating the user");
+    }
   }
 
   async deactivateUser(id: string) {
