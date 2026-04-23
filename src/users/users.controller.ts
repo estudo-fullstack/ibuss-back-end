@@ -23,7 +23,7 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @Get("me")
+  @Get("me/:id")
   findOne(@Param("id", new ParseUUIDPipe()) id: string) {
     try {
       return this.usersService.findOne(id);
