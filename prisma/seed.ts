@@ -28,6 +28,18 @@ function createUser(user: {
     },
   });
 }
+
+function createBusCompany(company: { name: string; cnpj: string }) {
+  return prisma.busCompany.upsert({
+    where: { cnpj: company.cnpj },
+    update: {},
+    create: {
+      name: company.name,
+      cnpj: company.cnpj,
+    },
+  });
+}
+
 async function main() {
   const passwordHash = await bcrypt.hash("123456", 10);
 
@@ -55,8 +67,23 @@ async function main() {
     },
   ];
 
-  const result = await Promise.all(USERS.map((user) => createUser(user)));
-  console.log(result);
+  const BUS_COMPANIES = [
+    {
+      name: "Viação Cometa",
+      cnpj: "61123456000180",
+    },
+    {
+      name: "EMTU Metropolitana",
+      cnpj: "12345678000155",
+    },
+  ];
+
+  const [users, busCompanies] = await Promise.all([
+    Promise.all(USERS.map((user) => createUser(user))),
+    Promise.all(BUS_COMPANIES.map((company) => createBusCompany(company))),
+  ]);
+
+  console.log({ users, busCompanies });
 }
 
 main()
