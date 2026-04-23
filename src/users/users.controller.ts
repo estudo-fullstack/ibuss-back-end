@@ -18,12 +18,12 @@ import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
+  @Post("register")
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  @Get(":id")
+  @Get("me")
   findOne(@Param("id", new ParseUUIDPipe()) id: string) {
     try {
       return this.usersService.findOne(id);
@@ -34,12 +34,12 @@ export class UsersController {
     }
   }
 
-  @Patch(":id")
+  @Patch("me/:id")
   update(@Param("id", new ParseUUIDPipe()) id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
 
-  @Patch("password/:id")
+  @Patch("me/password/:id")
   updatePassword(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body() updateUserPasswordDto: UpdateUserPasswordDto
@@ -47,21 +47,10 @@ export class UsersController {
     return this.usersService.updatePassword(id, updateUserPasswordDto);
   }
 
-  @Patch("deactivate/:id")
+  @Patch("me/status/deactivate/:id")
   deactivateUser(@Param("id", new ParseUUIDPipe()) id: string) {
     try {
       return this.usersService.deactivateUser(id);
-    } catch (error) {
-      if (error.code === "P2025") {
-        throw new NotFoundException("User not found");
-      } else throw new InternalServerErrorException("An error occurred while updating the user");
-    }
-  }
-
-  @Patch("suspend/:id")
-  suspendUser(@Param("id", new ParseUUIDPipe()) id: string) {
-    try {
-      return this.usersService.suspendUser(id);
     } catch (error) {
       if (error.code === "P2025") {
         throw new NotFoundException("User not found");
