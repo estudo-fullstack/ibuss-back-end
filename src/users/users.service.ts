@@ -97,20 +97,4 @@ export class UsersService {
       },
     });
   }
-
-  async suspendUser(id: string) {
-    return this.prismaService.user.update({
-      data: {
-        status: "SUSPENDED",
-      },
-      where: {
-        id: id,
-      },
-      select: {
-        name: true,
-        email: true,
-        phoneNumber: true,
-      },
-    });
-  }
 }
