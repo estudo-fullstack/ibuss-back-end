@@ -28,6 +28,38 @@ function createUser(user: {
     },
   });
 }
+
+function createBusCompany(company: { name: string; cnpj: string }) {
+  return prisma.busCompany.upsert({
+    where: { cnpj: company.cnpj },
+    update: {},
+    create: {
+      name: company.name,
+      cnpj: company.cnpj,
+    },
+  });
+}
+
+function createRoute(route: {
+  companyId: string;
+  routeNumber: string;
+  origin: string;
+  destination: string;
+  tripDuration: number;
+  price: number;
+}) {
+  return prisma.route.create({
+    data: {
+      companyId: route.companyId,
+      routeNumber: route.routeNumber,
+      origin: route.origin,
+      destination: route.destination,
+      tripDuration: route.tripDuration,
+      price: route.price,
+    },
+  });
+}
+
 async function main() {
   const passwordHash = await bcrypt.hash("123456", 10);
 
@@ -55,8 +87,73 @@ async function main() {
     },
   ];
 
-  const result = await Promise.all(USERS.map((user) => createUser(user)));
-  console.log(result);
+  const BUS_COMPANIES = [
+    {
+      name: "Viação Cometa",
+      cnpj: "61123456000180",
+    },
+    {
+      name: "EMTU Metropolitana",
+      cnpj: "12345678000155",
+    },
+  ];
+
+  const ROUTES = [
+    {
+      companyCnpj: "12345678000155",
+      routeNumber: "EMTU-301",
+      origin: "São Paulo - Jabaquara",
+      destination: "Diadema",
+      tripDuration: 40,
+      price: 8.2,
+    },
+    {
+      companyCnpj: "12345678000155",
+      routeNumber: "EMTU-402",
+      origin: "São Paulo - Sacomã",
+      destination: "São Bernardo do Campo",
+      tripDuration: 50,
+      price: 9.0,
+    },
+    {
+      companyCnpj: "61123456000180",
+      routeNumber: "COM-202",
+      origin: "São Paulo - Barra Funda",
+      destination: "Santos",
+      tripDuration: 120,
+      price: 39.5,
+    },
+  ];
+
+  const [users, busCompanies] = await Promise.all([
+    Promise.all(USERS.map((user) => createUser(user))),
+    Promise.all(BUS_COMPANIES.map((company) => createBusCompany(company))),
+  ]);
+
+  const busCompaniesByCnpj = new Map(busCompanies.map((company) => [company.cnpj, company.id]));
+
+  const routes = await Promise.all(
+    ROUTES.map((route) => {
+      const companyId = busCompaniesByCnpj.get(route.companyCnpj);
+
+      if (!companyId) {
+        throw new Error(
+          `Bus company not found for route ${route.routeNumber}: ${route.companyCnpj}`
+        );
+      }
+
+      return createRoute({
+        companyId,
+        routeNumber: route.routeNumber,
+        origin: route.origin,
+        destination: route.destination,
+        tripDuration: route.tripDuration,
+        price: route.price,
+      });
+    })
+  );
+
+  console.log({ users, busCompanies, routes });
 }
 
 main()
