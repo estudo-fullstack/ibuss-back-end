@@ -46,7 +46,7 @@ model Route {
   companyId     String
   company       BusCompany @relation(fields: [companyId], references: [id])
 
-  routeNumber  String @db.VarChar(10)
+  routeNumber  String @db.VarChar(10) @unique
   origin        String @db.VarChar(50)
   destination   String @db.VarChar(50)
 
