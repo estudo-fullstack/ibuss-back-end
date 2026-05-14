@@ -93,6 +93,11 @@ model Ticket {
   usedAt DateTime?
 }
 
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+}
+
 model WalletTransaction {
   id String @id @default(uuid())
 
@@ -100,7 +105,7 @@ model WalletTransaction {
   user   User @relation(fields: [userId], references: [id])
 
   transactionAmount Decimal @db.Decimal(10,2)
-  transactionType String
+  transactionType TransactionType
 
   createdAt DateTime @default(now())
 
