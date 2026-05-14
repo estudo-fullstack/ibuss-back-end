@@ -18,5 +18,5 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   email?: string;
 
   @IsPhoneNumber("BR")
-  phone_number?: string;
+  phoneNumber?: string;
 }
