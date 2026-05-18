@@ -4,6 +4,7 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import bcrypt from "bcrypt";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
+import { UserNotFoundException } from "./errors/users.error";
 
 @Injectable()
 export class UsersService {
@@ -55,7 +56,10 @@ export class UsersService {
     } catch (error) {
       if (error.code === "P2025") {
         throw new NotFoundException("User not found");
-      } else throw new InternalServerErrorException("An error occurred while updating the user");
+      } else {
+        //corrigir essa parte, deixar como updatePassword
+        throw new InternalServerErrorException("An error occurred while updating the user");
+      }
     }
   }
 
@@ -78,23 +82,31 @@ export class UsersService {
     } catch (error) {
       if (error.code === "P2025") {
         throw new NotFoundException("User not found");
-      } else throw new InternalServerErrorException("An error occurred while updating the user");
+      }
+
+      throw error;
     }
   }
 
   async deactivateUser(id: string) {
-    return this.prismaService.user.update({
-      data: {
-        status: "INACTIVE",
-      },
-      where: {
-        id: id,
-      },
-      select: {
-        name: true,
-        email: true,
-        phoneNumber: true,
-      },
-    });
+    try {
+      return this.prismaService.user.update({
+        data: {
+          status: "INACTIVE",
+        },
+        where: {
+          id: id,
+        },
+        select: {
+          name: true,
+          email: true,
+          phoneNumber: true,
+        },
+      });
+    } catch (error) {
+      if (error.code === "P2025") {
+        throw new UserNotFoundException("User not found");
+      }
+    }
   }
 }

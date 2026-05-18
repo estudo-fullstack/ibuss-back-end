@@ -13,6 +13,7 @@ import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
+import { UserNotFoundException } from "./errors/users.error";
 
 @Controller("users")
 export class UsersController {
@@ -52,9 +53,9 @@ export class UsersController {
     try {
       return this.usersService.deactivateUser(id);
     } catch (error) {
-      if (error.code === "P2025") {
-        throw new NotFoundException("User not found");
-      } else throw new InternalServerErrorException("An error occurred while updating the user");
+      if (error instanceof UserNotFoundException) {
+        throw new NotFoundException(error.message);
+      }
     }
   }
 }
