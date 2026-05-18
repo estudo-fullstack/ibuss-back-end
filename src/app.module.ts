@@ -4,6 +4,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { UsersModule } from "./users/users.module";
 import { PrismaModule } from "./prisma/prisma.module";
+import { WalletTransactionModule } from "./wallet-transaction/wallet-transaction.module";
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { PrismaModule } from "./prisma/prisma.module";
     }),
     UsersModule,
     PrismaModule,
+    WalletTransactionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

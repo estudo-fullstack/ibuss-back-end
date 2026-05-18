@@ -50,7 +50,7 @@ export class UsersService {
         select: {
           name: true,
           email: true,
-          phone_number: true,
+          phoneNumber: true,
         },
       });
     } catch (error) {
@@ -76,7 +76,7 @@ export class UsersService {
         select: {
           name: true,
           email: true,
-          phone_number: true,
+          phoneNumber: true,
         },
       });
     } catch (error) {
