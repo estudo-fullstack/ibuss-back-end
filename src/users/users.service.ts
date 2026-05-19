@@ -19,32 +19,6 @@ export class UsersService {
     return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
   }
 
-  private getDuplicateUserField(error: Prisma.PrismaClientKnownRequestError) {
-    const target = error.meta?.target;
-
-    if (Array.isArray(target)) {
-      if (target.includes("email")) {
-        return "email";
-      }
-
-      if (target.includes("cpf")) {
-        return "cpf";
-      }
-    }
-
-    if (typeof target === "string") {
-      if (target.includes("email")) {
-        return "email";
-      }
-
-      if (target.includes("cpf")) {
-        return "cpf";
-      }
-    }
-
-    return null;
-  }
-
   async create(createUserDto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(createUserDto.password, 10);
 
@@ -62,19 +36,8 @@ export class UsersService {
       });
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
-        const duplicatedField = this.getDuplicateUserField(error);
-
-        if (duplicatedField === "email") {
-          throw new UserAlreadyExistsException("Email already exists");
-        }
-
-        if (duplicatedField === "cpf") {
-          throw new UserAlreadyExistsException("CPF already exists");
-        }
-
         throw new UserAlreadyExistsException();
       }
-
       throw error;
     }
   }
