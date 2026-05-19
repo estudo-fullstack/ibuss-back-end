@@ -1,4 +1,5 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "src/generated/prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import bcrypt from "bcrypt";
@@ -9,6 +10,10 @@ import { UserNotFoundException } from "./errors/users.error";
 @Injectable()
 export class UsersService {
   constructor(private prismaService: PrismaService) {}
+
+  private isRecordNotFoundError(error: unknown) {
+    return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025";
+  }
 
   async create(createUserDto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(createUserDto.password, 10);
@@ -25,8 +30,8 @@ export class UsersService {
     });
   }
 
-  findOne(id: string) {
-    return this.prismaService.user.findUnique({
+  async findOne(id: string) {
+    const user = await this.prismaService.user.findUnique({
       where: {
         id: id,
       },
@@ -36,6 +41,12 @@ export class UsersService {
         phoneNumber: true,
       },
     });
+
+    if (!user) {
+      throw new UserNotFoundException();
+    }
+
+    return user;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -54,12 +65,11 @@ export class UsersService {
         },
       });
     } catch (error) {
-      if (error.code === "P2025") {
-        throw new NotFoundException("User not found");
-      } else {
-        //corrigir essa parte, deixar como updatePassword
-        throw new InternalServerErrorException("An error occurred while updating the user");
+      if (this.isRecordNotFoundError(error)) {
+        throw new UserNotFoundException();
       }
+
+      throw error;
     }
   }
 
@@ -80,8 +90,8 @@ export class UsersService {
         },
       });
     } catch (error) {
-      if (error.code === "P2025") {
-        throw new NotFoundException("User not found");
+      if (this.isRecordNotFoundError(error)) {
+        throw new UserNotFoundException();
       }
 
       throw error;
@@ -104,9 +114,11 @@ export class UsersService {
         },
       });
     } catch (error) {
-      if (error.code === "P2025") {
-        throw new UserNotFoundException("User not found");
+      if (this.isRecordNotFoundError(error)) {
+        throw new UserNotFoundException();
       }
+
+      throw error;
     }
   }
 }

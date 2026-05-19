@@ -6,14 +6,11 @@ import {
   Patch,
   Param,
   ParseUUIDPipe,
-  NotFoundException,
-  InternalServerErrorException,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
-import { UserNotFoundException } from "./errors/users.error";
 
 @Controller("users")
 export class UsersController {
@@ -26,13 +23,7 @@ export class UsersController {
 
   @Get("me/:id")
   findOne(@Param("id", new ParseUUIDPipe()) id: string) {
-    try {
-      return this.usersService.findOne(id);
-    } catch (error) {
-      if (error.code === "P2025") {
-        throw new NotFoundException("User not found");
-      } else throw new InternalServerErrorException("An error occurred while updating the user");
-    }
+    return this.usersService.findOne(id);
   }
 
   @Patch("me/:id")
@@ -50,12 +41,6 @@ export class UsersController {
 
   @Patch("me/status/deactivate/:id")
   deactivateUser(@Param("id", new ParseUUIDPipe()) id: string) {
-    try {
-      return this.usersService.deactivateUser(id);
-    } catch (error) {
-      if (error instanceof UserNotFoundException) {
-        throw new NotFoundException(error.message);
-      }
-    }
+    return this.usersService.deactivateUser(id);
   }
 }
