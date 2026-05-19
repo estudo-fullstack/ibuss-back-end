@@ -10,7 +10,7 @@ import { UserAlreadyExistsException, UserNotFoundException } from "./errors/user
 @Injectable()
 export class UsersService {
   constructor(private prismaService: PrismaService) {}
-
+  // Posteriormente esses métodos serão extraídos para uma classe separada para ser mais reutilizavel
   private isRecordNotFoundError(error: unknown) {
     return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025";
   }
