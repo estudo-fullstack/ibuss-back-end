@@ -5,7 +5,7 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import bcrypt from "bcrypt";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
-import { UserNotFoundException } from "./errors/users.error";
+import { UserAlreadyExistsException, UserNotFoundException } from "./errors/users.error";
 
 @Injectable()
 export class UsersService {
@@ -15,19 +15,68 @@ export class UsersService {
     return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025";
   }
 
+  private isUniqueConstraintError(error: unknown) {
+    return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+  }
+
+  private getDuplicateUserField(error: Prisma.PrismaClientKnownRequestError) {
+    const target = error.meta?.target;
+
+    if (Array.isArray(target)) {
+      if (target.includes("email")) {
+        return "email";
+      }
+
+      if (target.includes("cpf")) {
+        return "cpf";
+      }
+    }
+
+    if (typeof target === "string") {
+      if (target.includes("email")) {
+        return "email";
+      }
+
+      if (target.includes("cpf")) {
+        return "cpf";
+      }
+    }
+
+    return null;
+  }
+
   async create(createUserDto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(createUserDto.password, 10);
-    return this.prismaService.user.create({
-      data: {
-        ...createUserDto,
-        password: passwordHash,
-      },
-      select: {
-        name: true,
-        email: true,
-        phoneNumber: true,
-      },
-    });
+
+    try {
+      return await this.prismaService.user.create({
+        data: {
+          ...createUserDto,
+          password: passwordHash,
+        },
+        select: {
+          name: true,
+          email: true,
+          phoneNumber: true,
+        },
+      });
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        const duplicatedField = this.getDuplicateUserField(error);
+
+        if (duplicatedField === "email") {
+          throw new UserAlreadyExistsException("Email already exists");
+        }
+
+        if (duplicatedField === "cpf") {
+          throw new UserAlreadyExistsException("CPF already exists");
+        }
+
+        throw new UserAlreadyExistsException();
+      }
+
+      throw error;
+    }
   }
 
   async findOne(id: string) {

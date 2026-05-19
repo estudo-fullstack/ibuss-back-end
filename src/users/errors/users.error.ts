@@ -6,3 +6,9 @@ export class UserNotFoundException extends AppError {
     super(message, HttpStatus.NOT_FOUND);
   }
 }
+
+export class UserAlreadyExistsException extends AppError {
+  constructor(message = "User already exists") {
+    super(message, HttpStatus.CONFLICT);
+  }
+}
