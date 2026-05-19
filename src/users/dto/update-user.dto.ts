@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { PartialType } from "@nestjs/mapped-types";
 import { CreateUserDto } from "./create-user.dto";
+import { IsEmail, IsPhoneNumber } from "class-validator";
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   /**
@@ -11,6 +13,10 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
    * Não permitir alterar: cpf
    */
   name?: string;
+
+  @IsEmail()
   email?: string;
-  phoneNumber?: string;
+
+  @IsPhoneNumber("BR")
+  phone_number?: string;
 }
