@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, Schedule } from "../src/generated/prisma/client";
 import bcrypt from "bcrypt";
+import { WalletTransaction } from "src/wallet-transaction/entities/wallet-transaction.entity";
 
 const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
@@ -74,6 +75,16 @@ function createSchedule(schedule: scheduleRecords) {
       dayOfWeek: schedule.dayOfWeek,
       departureTime: schedule.departureTime,
       isActive: schedule.isActive,
+function createWalletTransaction(transaction: {
+  userId: string;
+  amount: number;
+  type: "DEPOSIT" | "WITHDRAWAL";
+}) {
+  return prisma.walletTransaction.create({
+    data: {
+      userId: transaction.userId,
+      transactionAmount: transaction.amount,
+      transactionType: transaction.type,
     },
   });
 }
@@ -241,6 +252,18 @@ async function main() {
   const schedules = await Promise.all(createSchedulePromises);
 
   console.log({ users, busCompanies, routes, schedules });
+  const usersSeed = await prisma.user.findMany({ take: 2 });
+  const walletTransactions: { userId: string; transactions: WalletTransaction[] }[] = [];
+  for (const user of usersSeed) {
+    const txs = await Promise.all([
+      createWalletTransaction({ userId: user.id, amount: Math.random() * 100, type: "DEPOSIT" }),
+      createWalletTransaction({ userId: user.id, amount: Math.random() * 100, type: "WITHDRAWAL" }),
+    ]);
+
+    walletTransactions.push({ userId: user.id, transactions: txs });
+  }
+
+  console.log({ users, busCompanies, routes, walletTransactions });
 }
 
 main()
