@@ -18,13 +18,14 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
+  @Post("register")
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(":id")
+  @Get("me/:id")
   findOne(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.usersService.findOne(id);
   }
@@ -40,6 +41,12 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Patch("password/:id")
+  @Patch("me/:id")
+  update(@Param("id", new ParseUUIDPipe()) id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(id, updateUserDto);
+  }
+
+  @Patch("me/password/:id")
   updatePassword(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body() updateUserPasswordDto: UpdateUserPasswordDto
@@ -57,5 +64,8 @@ export class UsersController {
   @Patch("suspend/:id")
   suspendUser(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.usersService.suspendUser(id);
+  @Patch("me/status/deactivate/:id")
+  deactivateUser(@Param("id", new ParseUUIDPipe()) id: string) {
+    return this.usersService.deactivateUser(id);
   }
 }
