@@ -1,11 +1,13 @@
-import { Injectable } from "@nestjs/common";
-import { Prisma } from "src/generated/prisma/client";
-import { PrismaService } from "src/prisma/prisma.service";
-import { CreateUserDto } from "./dto/create-user.dto";
-import bcrypt from "bcrypt";
-import { UpdateUserDto } from "./dto/update-user.dto";
+import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
-import { UserAlreadyExistsException, UserNotFoundException } from "./errors/users.error";
+import { CreateUserDto } from "./dto/create-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import bcrypt from "bcrypt";
+
+function isPrismaError(error: unknown): error is { code?: string } {
+  return typeof error === "object" && error !== null && "code" in error;
+}
 
 @Injectable()
 export class UsersService {
@@ -21,25 +23,20 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(createUserDto.password, 10);
+    const { phoneNumber: phoneNumber, ...rest } = createUserDto;
 
-    try {
-      return await this.prismaService.user.create({
-        data: {
-          ...createUserDto,
-          password: passwordHash,
-        },
-        select: {
-          name: true,
-          email: true,
-          phoneNumber: true,
-        },
-      });
-    } catch (error) {
-      if (this.isUniqueConstraintError(error)) {
-        throw new UserAlreadyExistsException();
-      }
-      throw error;
-    }
+    return this.prismaService.user.create({
+      data: {
+        ...rest,
+        password: passwordHash,
+        phoneNumber,
+      },
+      select: {
+        name: true,
+        email: true,
+        phoneNumber: true,
+      },
+    });
   }
 
   async findOne(id: string) {
