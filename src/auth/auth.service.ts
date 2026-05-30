@@ -8,7 +8,7 @@ import * as bcrypt from "bcrypt";
 export class AuthService {
   constructor(
     private prismaService: PrismaService,
-    private jwtService: JwtService,
+    private jwtService: JwtService
   ) {}
 
   async login(loginDto: LoginDto) {

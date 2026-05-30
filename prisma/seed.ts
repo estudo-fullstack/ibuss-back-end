@@ -75,6 +75,10 @@ function createSchedule(schedule: scheduleRecords) {
       dayOfWeek: schedule.dayOfWeek,
       departureTime: schedule.departureTime,
       isActive: schedule.isActive,
+    },
+  });
+}
+
 function createWalletTransaction(transaction: {
   userId: string;
   amount: number;
@@ -251,9 +255,10 @@ async function main() {
   }
   const schedules = await Promise.all(createSchedulePromises);
 
-  console.log({ users, busCompanies, routes, schedules });
   const usersSeed = await prisma.user.findMany({ take: 2 });
+
   const walletTransactions: { userId: string; transactions: WalletTransaction[] }[] = [];
+
   for (const user of usersSeed) {
     const txs = await Promise.all([
       createWalletTransaction({ userId: user.id, amount: Math.random() * 100, type: "DEPOSIT" }),
@@ -263,7 +268,7 @@ async function main() {
     walletTransactions.push({ userId: user.id, transactions: txs });
   }
 
-  console.log({ users, busCompanies, routes, walletTransactions });
+  console.log({ users, busCompanies, routes, schedules, walletTransactions });
 }
 
 main()

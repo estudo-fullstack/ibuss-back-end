@@ -1,13 +1,11 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import bcrypt from "bcrypt";
 import { PrismaService } from "../prisma/prisma.service";
+import { Prisma } from "src/generated/prisma/client";
 import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
-import bcrypt from "bcrypt";
-
-function isPrismaError(error: unknown): error is { code?: string } {
-  return typeof error === "object" && error !== null && "code" in error;
-}
+import { UserNotFoundException } from "./errors/users.error";
 
 @Injectable()
 export class UsersService {
