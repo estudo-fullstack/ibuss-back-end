@@ -1,26 +1,50 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { Prisma } from "src/generated/prisma/client";
+import { PrismaService } from "src/prisma/prisma.service";
+import { WalletTransactionService } from "src/wallet-transaction/wallet-transaction.service";
 import { CreateTicketDto } from "./dto/create-ticket.dto";
-import { UpdateTicketDto } from "./dto/update-ticket.dto";
 
 @Injectable()
 export class TicketService {
-  create(createTicketDto: CreateTicketDto) {
-    return "This action adds a new ticket";
-  }
+  constructor(
+    private prisma: PrismaService,
+    private walletTransactionService: WalletTransactionService,
+  ) {}
 
-  findAll() {
-    return `This action returns all ticket`;
-  }
+  // findAll() {
+  //   return `This action returns all ticket`;
+  // }
 
-  findOne(id: number) {
-    return `This action returns a #${id} ticket`;
-  }
+  // findOne(id: string) {
+  //   return `This action returns a #${id} ticket`;
+  // }
 
-  update(id: number, updateTicketDto: UpdateTicketDto) {
-    return `This action updates a #${id} ticket`;
-  }
+  async purchase(userId: string, purchaseData: CreateTicketDto) {
+    const balance = await this.walletTransactionService.getBalance(userId);
 
-  remove(id: number) {
-    return `This action removes a #${id} ticket`;
+    if (balance < purchaseData.purchasePrice) {
+      throw new BadRequestException("Saldo insuficiente");
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const walletTransaction = await tx.walletTransaction.create({
+        data: {
+          userId,
+          transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
+          transactionType: "WITHDRAWAL",
+        },
+      });
+
+      return tx.ticket.create({
+        data: {
+          userId,
+          routeId: purchaseData.routeId,
+          walletTransactionId: walletTransaction.id,
+          purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
+          status: "CONFIRMED",
+          purchaseAt: new Date(),
+        },
+      });
+    });
   }
 }
