@@ -8,7 +8,7 @@ import { CreateTicketDto } from "./dto/create-ticket.dto";
 export class TicketService {
   constructor(
     private prisma: PrismaService,
-    private walletTransactionService: WalletTransactionService,
+    private walletTransactionService: WalletTransactionService
   ) {}
 
   // findAll() {
@@ -41,8 +41,11 @@ export class TicketService {
           routeId: purchaseData.routeId,
           walletTransactionId: walletTransaction.id,
           purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
-          status: "CONFIRMED",
           purchaseAt: new Date(),
+        },
+        select: {
+          status: true,
+          purchaseAt: true,
         },
       });
     });
