@@ -58,7 +58,7 @@ model Route {
 
   tripDuration Int
   price         Decimal @db.Decimal(10,2)
-  status RouteStatus
+  status RouteStatusType
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,7 +100,7 @@ model Ticket {
   walletTransaction   WalletTransaction @relation(fields: [walletTransactionId], references: [id])
 
   purchasePrice Decimal @db.Decimal(10,2)
-  status TicketStatus
+  status TicketStatusType
 
   purchaseAt DateTime
   usedAt DateTime?
