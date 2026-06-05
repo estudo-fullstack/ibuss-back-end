@@ -1,19 +1,39 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { Prisma } from "src/generated/prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { WalletTransactionService } from "src/wallet-transaction/wallet-transaction.service";
 import { CreateTicketDto } from "./dto/create-ticket.dto";
+import { Prisma, TicketStatusType } from "src/generated/prisma/client";
 
 @Injectable()
 export class TicketService {
   constructor(
-    private prisma: PrismaService,
-    private walletTransactionService: WalletTransactionService
+    private readonly prismaService: PrismaService,
+    private readonly walletTransactionService: WalletTransactionService
   ) {}
 
-  // findAll() {
-  //   return `This action returns all ticket`;
-  // }
+  async findByUser(userId: string, status: TicketStatusType) {
+    return this.prismaService.ticket.findMany({
+      where: {
+        userId,
+        status,
+      },
+      select: {
+        id: true,
+        purchasePrice: true,
+        status: true,
+        purchaseAt: true,
+        usedAt: true,
+        route: {
+          select: {
+            routeNumber: true,
+            origin: true,
+            destination: true,
+            price: true,
+          },
+        },
+      },
+    });
+  }
 
   // findOne(id: string) {
   //   return `This action returns a #${id} ticket`;
@@ -26,7 +46,7 @@ export class TicketService {
       throw new BadRequestException("Saldo insuficiente");
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prismaService.$transaction(async (tx) => {
       const walletTransaction = await tx.walletTransaction.create({
         data: {
           userId,
