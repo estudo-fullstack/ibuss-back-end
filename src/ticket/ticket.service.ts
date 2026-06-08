@@ -11,6 +11,10 @@ export class TicketService {
     private readonly walletTransactionService: WalletTransactionService
   ) {}
 
+  private isForeignKeyError(error: unknown) {
+    return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003";
+  }
+
   async findByUser(userId: string, status: TicketStatusType) {
     return this.prismaService.ticket.findMany({
       where: {
@@ -36,7 +40,7 @@ export class TicketService {
   }
 
   async findOne(id: string) {
-    return this.prismaService.ticket.findUnique({
+    return await this.prismaService.ticket.findUnique({
       where: { id },
       select: {
         id: true,
@@ -60,31 +64,39 @@ export class TicketService {
     const balance = await this.walletTransactionService.getBalance(userId);
 
     if (balance < purchaseData.purchasePrice) {
-      throw new BadRequestException("Saldo insuficiente");
+      throw new BadRequestException("Insufficient balance");
     }
 
-    return this.prismaService.$transaction(async (tx) => {
-      const walletTransaction = await tx.walletTransaction.create({
-        data: {
-          userId,
-          transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
-          transactionType: "WITHDRAWAL",
-        },
-      });
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        const walletTransaction = await tx.walletTransaction.create({
+          data: {
+            userId,
+            transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
+            transactionType: "WITHDRAWAL",
+          },
+        });
 
-      return tx.ticket.create({
-        data: {
-          userId,
-          routeId: purchaseData.routeId,
-          walletTransactionId: walletTransaction.id,
-          purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
-          purchaseAt: new Date(),
-        },
-        select: {
-          status: true,
-          purchaseAt: true,
-        },
+        return tx.ticket.create({
+          data: {
+            userId,
+            routeId: purchaseData.routeId,
+            walletTransactionId: walletTransaction.id,
+            purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
+            purchaseAt: new Date(),
+          },
+          select: {
+            status: true,
+            purchaseAt: true,
+          },
+        });
       });
-    });
+    } catch (error) {
+      if (this.isForeignKeyError(error)) {
+        throw new BadRequestException("User or route not found");
+      }
+
+      throw error;
+    }
   }
 }
