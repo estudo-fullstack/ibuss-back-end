@@ -35,9 +35,26 @@ export class TicketService {
     });
   }
 
-  // findOne(id: string) {
-  //   return `This action returns a #${id} ticket`;
-  // }
+  async findOne(id: string) {
+    return this.prismaService.ticket.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        purchasePrice: true,
+        status: true,
+        purchaseAt: true,
+        usedAt: true,
+        route: {
+          select: {
+            routeNumber: true,
+            origin: true,
+            destination: true,
+            price: true,
+          },
+        },
+      },
+    });
+  }
 
   async purchase(userId: string, purchaseData: CreateTicketDto) {
     const balance = await this.walletTransactionService.getBalance(userId);
