@@ -28,9 +28,7 @@ export class WalletTransactionService {
     });
 
     const totalDeposits = Number(deposits._sum.transactionAmount ?? 0);
-
     const totalWithdrawals = Number(withdrawals._sum.transactionAmount ?? 0);
-
     return totalDeposits - totalWithdrawals;
   }
 
@@ -48,22 +46,22 @@ export class WalletTransactionService {
     });
   }
 
-  async withdraw(userId: string, amount: number) {
-    if (amount <= 0) {
-      throw new BadRequestException("Withdrawal amount must be greater than zero");
-    }
+  // async withdraw(userId: string, amount: number) {
+  //   if (amount <= 0) {
+  //     throw new BadRequestException("Withdrawal amount must be greater than zero");
+  //   }
 
-    const balance = await this.getBalance(userId);
-    if (balance < amount) {
-      throw new BadRequestException("Insufficient balance");
-    }
+  //   const balance = await this.getBalance(userId);
+  //   if (balance < amount) {
+  //     throw new BadRequestException("Insufficient balance");
+  //   }
 
-    return this.prismaService.walletTransaction.create({
-      data: {
-        userId,
-        transactionAmount: new Prisma.Decimal(amount),
-        transactionType: "WITHDRAWAL",
-      },
-    });
-  }
+  //   return this.prismaService.walletTransaction.create({
+  //     data: {
+  //       userId,
+  //       transactionAmount: new Prisma.Decimal(amount),
+  //       transactionType: "WITHDRAWAL",
+  //     },
+  //   });
+  // }
 }
