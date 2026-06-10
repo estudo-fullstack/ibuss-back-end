@@ -1,11 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { Prisma } from "../generated/prisma/client";
+import { Prisma } from "src/generated/prisma/client";
 import {
-  InsufficientBalanceException,
   InvalidTransactionAmountException,
   WalletUserNotFoundException,
 } from "./errors/wallet-transaction.error";
+import { TransactionType } from "../generated/prisma/enums";
 
 @Injectable()
 export class WalletTransactionService {
@@ -19,7 +19,7 @@ export class WalletTransactionService {
     const deposits = await this.prismaService.walletTransaction.aggregate({
       where: {
         userId,
-        transactionType: "DEPOSIT",
+        transactionType: TransactionType.DEPOSIT,
       },
       _sum: {
         transactionAmount: true,
@@ -29,7 +29,7 @@ export class WalletTransactionService {
     const withdrawals = await this.prismaService.walletTransaction.aggregate({
       where: {
         userId,
-        transactionType: "WITHDRAWAL",
+        transactionType: TransactionType.WITHDRAWAL,
       },
       _sum: {
         transactionAmount: true,
@@ -37,9 +37,7 @@ export class WalletTransactionService {
     });
 
     const totalDeposits = Number(deposits._sum.transactionAmount ?? 0);
-
     const totalWithdrawals = Number(withdrawals._sum.transactionAmount ?? 0);
-
     return totalDeposits - totalWithdrawals;
   }
 
@@ -49,47 +47,37 @@ export class WalletTransactionService {
     }
 
     try {
-
       return this.prismaService.walletTransaction.create({
         data: {
           userId,
           transactionAmount: new Prisma.Decimal(amount),
-          transactionType: "DEPOSIT",
+          transactionType: TransactionType.DEPOSIT,
         },
       });
-
-    }  catch (error) {
-      if (this.isRecordNotFoundError(error)) {
-        throw new WalletUserNotFoundException();
-      }
-      throw error;
-    }  
-  }
-
-  async withdraw(userId: string, amount: number) {
-    if (amount <= 0) {
-      throw new InvalidTransactionAmountException("Withdrawal amount must be greater than zero");
-    }
-
-    const balance = await this.getBalance(userId);
-    if (balance < amount) {
-      throw new InsufficientBalanceException("Insufficient balance");
-    }
-
-    try {
-      return this.prismaService.walletTransaction.create({
-        data: {
-          userId,
-          transactionAmount: new Prisma.Decimal(amount),
-          transactionType: "WITHDRAWAL",
-        },
-      });
-
     } catch (error) {
       if (this.isRecordNotFoundError(error)) {
         throw new WalletUserNotFoundException();
       }
       throw error;
     }
+  }
+
+  async getExtract(userId: string, type?: TransactionType) {
+    const transactions = await this.prismaService.walletTransaction.findMany({
+      where: {
+        userId,
+        ...(type && { transactionType: type }),
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return transactions.map((transaction) => ({
+      id: transaction.id,
+      amount: Number(transaction.transactionAmount),
+      type: transaction.transactionType,
+      createdAt: transaction.createdAt,
+    }));
   }
 }
