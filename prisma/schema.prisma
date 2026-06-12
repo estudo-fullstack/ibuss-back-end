@@ -103,6 +103,7 @@ model Ticket {
   status TicketStatusType @default(ACTIVE)
 
   purchaseAt DateTime
+  expiresAt DateTime
   usedAt DateTime?
 }
 
