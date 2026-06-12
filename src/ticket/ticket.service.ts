@@ -68,28 +68,34 @@ export class TicketService {
     }
 
     try {
-      return await this.prismaService.$transaction(async (tx) => {
-        const walletTransaction = await tx.walletTransaction.create({
-          data: {
-            userId,
-            transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
-            transactionType: "WITHDRAWAL",
+      return await this.prismaService.walletTransaction.create({
+        data: {
+          userId,
+          transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
+          transactionType: "WITHDRAWAL",
+          ticket: {
+            create: {
+              userId: userId,
+              routeId: purchaseData.routeId,
+              purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
+              purchaseAt: new Date(),
+            },
           },
-        });
-
-        return tx.ticket.create({
-          data: {
-            userId,
-            routeId: purchaseData.routeId,
-            walletTransactionId: walletTransaction.id,
-            purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
-            purchaseAt: new Date(),
+        },
+        select: {
+          transactionAmount: true,
+          ticket: {
+            select: {
+              status: true,
+              route: {
+                select: {
+                  origin: true,
+                  destination: true,
+                },
+              },
+            },
           },
-          select: {
-            status: true,
-            purchaseAt: true,
-          },
-        });
+        },
       });
     } catch (error) {
       if (this.isForeignKeyError(error)) {
