@@ -68,6 +68,11 @@ export class TicketService {
     }
 
     try {
+      const purchaseAt = new Date();
+
+      const expiresAt = new Date(purchaseAt);
+      expiresAt.setDate(expiresAt.getDate() + 30);
+
       return await this.prismaService.walletTransaction.create({
         data: {
           userId,
@@ -78,7 +83,8 @@ export class TicketService {
               userId: userId,
               routeId: purchaseData.routeId,
               purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
-              purchaseAt: new Date(),
+              purchaseAt: purchaseAt,
+              expiresAt: expiresAt,
             },
           },
         },
@@ -87,6 +93,7 @@ export class TicketService {
           ticket: {
             select: {
               status: true,
+              expiresAt: true,
               route: {
                 select: {
                   origin: true,
