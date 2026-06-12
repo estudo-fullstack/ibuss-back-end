@@ -85,6 +85,7 @@ enum TicketStatusType {
   ACTIVE
   USED
   CANCELED
+  EXPIRED
 }
 
 model Ticket {
