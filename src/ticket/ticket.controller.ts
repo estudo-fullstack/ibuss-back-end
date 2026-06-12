@@ -9,6 +9,7 @@ import {
   Param,
   ParseUUIDPipe,
   ParseEnumPipe,
+  Patch,
 } from "@nestjs/common";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { TicketService } from "./ticket.service";
@@ -30,12 +31,17 @@ export class TicketController {
   }
 
   @Get(":id")
-  findOne(@Param("id", new ParseUUIDPipe()) id: string) {
-    return this.ticketService.findOne(id);
+  findOne(@Req() req: Request, @Param("id", new ParseUUIDPipe()) id: string) {
+    return this.ticketService.findOne(req.user!.id, id);
   }
 
   @Post("purchase")
-  async purchase(@Req() req: Request, @Body() purchaseData: PurchaseTicketDto) {
+  purchase(@Req() req: Request, @Body() purchaseData: PurchaseTicketDto) {
     return this.ticketService.purchase(req.user!.id, purchaseData);
+  }
+
+  @Patch(":id/cancel")
+  cancel(@Req() req: Request, @Param("id", new ParseUUIDPipe()) id: string) {
+    return this.ticketService.markAsCanceled(req.user!.id, id);
   }
 }

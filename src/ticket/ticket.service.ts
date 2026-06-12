@@ -36,9 +36,9 @@ export class TicketService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(userId: string, ticketId: string) {
     return await this.prismaService.ticket.findUnique({
-      where: { id },
+      where: { id: ticketId, userId: userId },
       select: {
         id: true,
         purchasePrice: true,
@@ -125,10 +125,11 @@ export class TicketService {
     }
   }
 
-  async markAsCanceled(ticketId: string) {
+  async markAsCanceled(userId: string, ticketId: string) {
+    // para cancelamento partindo do usuário logado
     try {
       return await this.prismaService.ticket.update({
-        where: { id: ticketId },
+        where: { id: ticketId, userId: userId },
         data: {
           status: TicketStatusType.CANCELED,
         },
@@ -183,7 +184,11 @@ export class TicketService {
         };
       }
 
-      if (ticket.expiresAt <= new Date()) {
+      if (ticket.expiresAt <= new Date() && ticket.status === TicketStatusType.ACTIVE) {
+        await this.markAsExpired(ticketId);
+      }
+
+      if (ticket.status === TicketStatusType.EXPIRED) {
         return {
           success: false,
           result: "Ticket expired",
