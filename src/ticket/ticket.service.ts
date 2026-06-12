@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { WalletTransactionService } from "src/wallet-transaction/wallet-transaction.service";
-import { CreateTicketDto } from "./dto/create-ticket.dto";
+import { PurchaseTicketDto } from "./dto/create-ticket.dto";
 import { Prisma, TicketStatusType } from "src/generated/prisma/client";
 
 @Injectable()
@@ -11,11 +11,7 @@ export class TicketService {
     private readonly walletTransactionService: WalletTransactionService
   ) {}
 
-  private isForeignKeyError(error: unknown) {
-    return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003";
-  }
-
-  async findByUser(userId: string, status: TicketStatusType) {
+  async findManyByUserAndStatus(userId: string, status: TicketStatusType) {
     return this.prismaService.ticket.findMany({
       where: {
         userId,
@@ -60,7 +56,7 @@ export class TicketService {
     });
   }
 
-  async purchase(userId: string, purchaseData: CreateTicketDto) {
+  async purchase(userId: string, purchaseData: PurchaseTicketDto) {
     const balance = await this.walletTransactionService.getBalance(userId);
 
     if (balance < purchaseData.purchasePrice) {
@@ -111,5 +107,9 @@ export class TicketService {
 
       throw error;
     }
+  }
+
+  private isForeignKeyError(error: unknown) {
+    return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003";
   }
 }

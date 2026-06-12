@@ -1,6 +1,6 @@
 import { IsString, IsNumber, Min } from "class-validator";
 
-export class CreateTicketDto {
+export class PurchaseTicketDto {
   @IsString()
   routeId!: string;
 
