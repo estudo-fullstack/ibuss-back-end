@@ -8,13 +8,6 @@ declare global {
     interface Request {
       user?: User;
     }
-    // export interface Request {
-    //   user?: {
-    //     id: string;
-    //     email: string;
-    //   };
-    //   testeChatGPT?: string;
-    // }
   }
 }
 
