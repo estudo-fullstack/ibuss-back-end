@@ -13,24 +13,14 @@ export class WalletTransactionController {
 
   @Get("balance")
   async getBalance(@Req() req: Request) {
-    const userId = req.user?.id ?? (req.headers["user-id"] as string);
-
-    if (!userId) {
-      throw new UserNotAuthenticatedException();
-    }
-
+    const userId = req.user!.id;
     const balance = await this.walletTransactionService.getBalance(userId);
     return { balance: Number(balance.toFixed(2)) };
   }
 
   @Post("deposit")
   async deposit(@Req() req: Request, @Body() body: DepositDto) {
-    const userId = req.user?.id ?? (req.headers["user-id"] as string);
-
-    if (!userId) {
-      throw new UserNotAuthenticatedException();
-    }
-
+    const userId = req.user!.id;
     const transaction = await this.walletTransactionService.deposit(userId, body.amount);
     return transaction;
   }

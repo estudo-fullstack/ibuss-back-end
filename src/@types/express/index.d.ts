@@ -4,6 +4,10 @@ declare global {
       id: string;
       email: string;
     }
+
+    interface Request {
+      user?: User;
+    }
   }
 }
 
