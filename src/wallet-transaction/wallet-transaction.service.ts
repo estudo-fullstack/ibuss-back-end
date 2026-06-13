@@ -1,16 +1,25 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "src/generated/prisma/client";
+import {
+  InvalidTransactionAmountException,
+  WalletUserNotFoundException,
+} from "./errors/wallet-transaction.error";
+import { TransactionType } from "../generated/prisma/enums";
 
 @Injectable()
 export class WalletTransactionService {
   constructor(private prismaService: PrismaService) {}
 
+  private isRecordNotFoundError(error: unknown) {
+    return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025";
+  }
+
   async getBalance(userId: string) {
     const deposits = await this.prismaService.walletTransaction.aggregate({
       where: {
         userId,
-        transactionType: "DEPOSIT",
+        transactionType: TransactionType.DEPOSIT,
       },
       _sum: {
         transactionAmount: true,
@@ -20,7 +29,7 @@ export class WalletTransactionService {
     const withdrawals = await this.prismaService.walletTransaction.aggregate({
       where: {
         userId,
-        transactionType: "WITHDRAWAL",
+        transactionType: TransactionType.WITHDRAWAL,
       },
       _sum: {
         transactionAmount: true,
@@ -34,34 +43,41 @@ export class WalletTransactionService {
 
   async deposit(userId: string, amount: number) {
     if (amount <= 0) {
-      throw new BadRequestException("Deposit amount must be greater than zero");
+      throw new InvalidTransactionAmountException("Deposit amount must be greater than zero");
     }
 
-    return this.prismaService.walletTransaction.create({
-      data: {
-        userId,
-        transactionAmount: new Prisma.Decimal(amount),
-        transactionType: "DEPOSIT",
-      },
-    });
+    try {
+      return this.prismaService.walletTransaction.create({
+        data: {
+          userId,
+          transactionAmount: new Prisma.Decimal(amount),
+          transactionType: TransactionType.DEPOSIT,
+        },
+      });
+    } catch (error) {
+      if (this.isRecordNotFoundError(error)) {
+        throw new WalletUserNotFoundException();
+      }
+      throw error;
+    }
   }
 
-  // async withdraw(userId: string, amount: number) {
-  //   if (amount <= 0) {
-  //     throw new BadRequestException("Withdrawal amount must be greater than zero");
-  //   }
+  async getExtract(userId: string, type?: TransactionType) {
+    const transactions = await this.prismaService.walletTransaction.findMany({
+      where: {
+        userId,
+        ...(type && { transactionType: type }),
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-  //   const balance = await this.getBalance(userId);
-  //   if (balance < amount) {
-  //     throw new BadRequestException("Insufficient balance");
-  //   }
-
-  //   return this.prismaService.walletTransaction.create({
-  //     data: {
-  //       userId,
-  //       transactionAmount: new Prisma.Decimal(amount),
-  //       transactionType: "WITHDRAWAL",
-  //     },
-  //   });
-  // }
+    return transactions.map((transaction) => ({
+      id: transaction.id,
+      amount: Number(transaction.transactionAmount),
+      type: transaction.transactionType,
+      createdAt: transaction.createdAt,
+    }));
+  }
 }

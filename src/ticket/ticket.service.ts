@@ -1,0 +1,102 @@
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { PrismaService } from "src/prisma/prisma.service";
+import { WalletTransactionService } from "src/wallet-transaction/wallet-transaction.service";
+import { CreateTicketDto } from "./dto/create-ticket.dto";
+import { Prisma, TicketStatusType } from "src/generated/prisma/client";
+
+@Injectable()
+export class TicketService {
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly walletTransactionService: WalletTransactionService
+  ) {}
+
+  private isForeignKeyError(error: unknown) {
+    return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003";
+  }
+
+  async findByUser(userId: string, status: TicketStatusType) {
+    return this.prismaService.ticket.findMany({
+      where: {
+        userId,
+        status,
+      },
+      select: {
+        id: true,
+        purchasePrice: true,
+        status: true,
+        purchaseAt: true,
+        usedAt: true,
+        route: {
+          select: {
+            routeNumber: true,
+            origin: true,
+            destination: true,
+            price: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findOne(id: string) {
+    return await this.prismaService.ticket.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        purchasePrice: true,
+        status: true,
+        purchaseAt: true,
+        usedAt: true,
+        route: {
+          select: {
+            routeNumber: true,
+            origin: true,
+            destination: true,
+            price: true,
+          },
+        },
+      },
+    });
+  }
+
+  async purchase(userId: string, purchaseData: CreateTicketDto) {
+    const balance = await this.walletTransactionService.getBalance(userId);
+
+    if (balance < purchaseData.purchasePrice) {
+      throw new BadRequestException("Insufficient balance");
+    }
+
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        const walletTransaction = await tx.walletTransaction.create({
+          data: {
+            userId,
+            transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
+            transactionType: "WITHDRAWAL",
+          },
+        });
+
+        return tx.ticket.create({
+          data: {
+            userId,
+            routeId: purchaseData.routeId,
+            walletTransactionId: walletTransaction.id,
+            purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
+            purchaseAt: new Date(),
+          },
+          select: {
+            status: true,
+            purchaseAt: true,
+          },
+        });
+      });
+    } catch (error) {
+      if (this.isForeignKeyError(error)) {
+        throw new BadRequestException("User or route not found");
+      }
+
+      throw error;
+    }
+  }
+}

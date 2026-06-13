@@ -1,12 +1,13 @@
-import { Controller, Get, Post, Req, Body, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Req, Body, UseGuards, Query } from "@nestjs/common";
 import { WalletTransactionService } from "./wallet-transaction.service";
 import type { Request } from "express";
 import { DepositDto } from "./dto/deposit.dto";
-// import { WithdrawDto } from "./dto/withdraw.dto";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
+import { UserNotAuthenticatedException } from "./errors/wallet-transaction.error";
+import { ExtractQueryDto } from "./dto/extract-query-dto";
 
 @UseGuards(JwtAuthGuard)
-@Controller("wallet-transaction")
+@Controller("wallet")
 export class WalletTransactionController {
   constructor(private readonly walletTransactionService: WalletTransactionService) {}
 
@@ -24,11 +25,9 @@ export class WalletTransactionController {
     return transaction;
   }
 
-  // @Post("withdraw")
-  // async withdraw(@Req() req: Request, @Body() body: WithdrawDto) {
-  //   // const userId = req.user?.id ?? (req.headers["user-id"] as string);
-  //   const userId = req.user!.id;
-  //   const transaction = await this.walletTransactionService.withdraw(userId, body.amount);
-  //   return transaction;
-  // }
+  @Get("transactions")
+  async getExtract(@Req() req: Request, @Query() { type }: ExtractQueryDto) {
+    const userId = req.user!.id;
+    return this.walletTransactionService.getExtract(userId, type);
+  }
 }
