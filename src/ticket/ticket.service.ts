@@ -45,12 +45,12 @@ export class TicketService {
         status: true,
         purchaseAt: true,
         usedAt: true,
+        expiresAt: true,
         route: {
           select: {
             routeNumber: true,
             origin: true,
             destination: true,
-            price: true,
           },
         },
       },
