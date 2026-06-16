@@ -142,68 +142,6 @@ export class TicketService {
     }
   }
 
-  async markAsExpired(ticketId: string) {
-    try {
-      return await this.prismaService.ticket.update({
-        where: { id: ticketId },
-        data: {
-          status: TicketStatusType.EXPIRED,
-        },
-        select: {
-          status: true,
-        },
-      });
-    } catch (error) {
-      this.handlePrismaError(error);
-    }
-  }
-
-  async validateTicket(ticketId: string) {
-    try {
-      const ticket = await this.prismaService.ticket.findUniqueOrThrow({
-        where: {
-          id: ticketId,
-        },
-        select: {
-          expiresAt: true,
-          status: true,
-        },
-      });
-
-      if (ticket.status === TicketStatusType.USED) {
-        return {
-          success: false,
-          result: "Ticket already used",
-        };
-      }
-
-      if (ticket.status === TicketStatusType.CANCELED) {
-        return {
-          success: false,
-          result: "Ticket canceled",
-        };
-      }
-
-      if (ticket.expiresAt <= new Date() && ticket.status === TicketStatusType.ACTIVE) {
-        await this.markAsExpired(ticketId);
-      }
-
-      if (ticket.status === TicketStatusType.EXPIRED) {
-        return {
-          success: false,
-          result: "Ticket expired",
-        };
-      }
-
-      return {
-        success: true,
-        result: "Ticket valid",
-      };
-    } catch (error) {
-      this.handlePrismaError(error);
-    }
-  }
-
   private handlePrismaError(error: unknown): never {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
       throw error;
