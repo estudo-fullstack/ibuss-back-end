@@ -102,7 +102,7 @@ export class TicketService {
         },
       });
     } catch (error) {
-      this.handlePrismaError(error);
+      return this.handlePrismaError(error);
     }
   }
 
@@ -121,7 +121,7 @@ export class TicketService {
         },
       });
     } catch (error) {
-      this.handlePrismaError(error);
+      return this.handlePrismaError(error);
     }
   }
 
@@ -138,7 +138,23 @@ export class TicketService {
         },
       });
     } catch (error) {
-      this.handlePrismaError(error);
+      return this.handlePrismaError(error);
+    }
+  }
+
+  async markAsExpired(ticketId: string) {
+    try {
+      return await this.prismaService.ticket.update({
+        where: { id: ticketId },
+        data: {
+          status: TicketStatusType.EXPIRED,
+        },
+        select: {
+          status: true,
+        },
+      });
+    } catch (error) {
+      return this.handlePrismaError(error);
     }
   }
 
