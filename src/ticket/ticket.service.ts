@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { WalletTransactionService } from "src/wallet-transaction/wallet-transaction.service";
+import { TicketTokenService } from "./ticketToken.service";
 import { PurchaseTicketDto } from "./dto/create-ticket.dto";
 import { Prisma, TicketStatusType } from "src/generated/prisma/client";
 import { TicketNotFoundException } from "./errors/ticket.error";
@@ -9,7 +10,8 @@ import { TicketNotFoundException } from "./errors/ticket.error";
 export class TicketService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly walletTransactionService: WalletTransactionService
+    private readonly walletTransactionService: WalletTransactionService,
+    private readonly ticketTokenService: TicketTokenService
   ) {}
 
   async findManyByUserAndStatus(userId: string, status: TicketStatusType) {
@@ -70,7 +72,7 @@ export class TicketService {
       const expiresAt = new Date(purchaseAt);
       expiresAt.setDate(expiresAt.getDate() + 30);
 
-      return await this.prismaService.walletTransaction.create({
+      const purchasedTicket = await this.prismaService.walletTransaction.create({
         data: {
           userId,
           transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
@@ -89,6 +91,7 @@ export class TicketService {
           transactionAmount: true,
           ticket: {
             select: {
+              id: true,
               status: true,
               expiresAt: true,
               route: {
@@ -101,6 +104,15 @@ export class TicketService {
           },
         },
       });
+
+      const generatedTicketId = purchasedTicket.ticket!.id;
+
+      const ticketToken = await this.ticketTokenService.generate(generatedTicketId);
+
+      return {
+        ticketId: generatedTicketId,
+        ticketToken: ticketToken,
+      };
     } catch (error) {
       return this.handlePrismaError(error);
     }
