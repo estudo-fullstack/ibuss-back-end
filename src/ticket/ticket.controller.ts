@@ -12,15 +12,20 @@ import {
   Patch,
 } from "@nestjs/common";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
+import { TicketValidationService } from "./ticketValidation.service";
 import { TicketService } from "./ticket.service";
 import { PurchaseTicketDto } from "./dto/create-ticket.dto";
 import { TicketStatusType } from "src/generated/prisma/enums";
 import type { Request } from "express";
+import { TicketDataDto } from "./dto/ticket-data.dto";
 
 @UseGuards(JwtAuthGuard)
 @Controller("ticket")
 export class TicketController {
-  constructor(private readonly ticketService: TicketService) {}
+  constructor(
+    private readonly ticketService: TicketService,
+    private readonly ticketValidationService: TicketValidationService
+  ) {}
 
   @Get()
   findAll(
@@ -43,5 +48,10 @@ export class TicketController {
   @Patch(":id/cancel")
   cancel(@Req() req: Request, @Param("id", new ParseUUIDPipe()) id: string) {
     return this.ticketService.markAsCanceled(req.user!.id, id);
+  }
+
+  @Post("validate")
+  validade(@Body() ticketData: TicketDataDto) {
+    return this.ticketValidationService.validateTicket(ticketData);
   }
 }
