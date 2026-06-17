@@ -6,12 +6,18 @@ import { TicketController } from "./ticket.controller";
 import { TicketService } from "./ticket.service";
 import { TicketTokenService } from "./ticketToken.service";
 import { TicketValidationService } from "./ticketValidation.service";
+import { ConfigService } from "@nestjs/config";
 
 @Module({
   imports: [
-    JwtModule.register({
-      secret: process.env.TICKET_SECRET,
-      signOptions: { expiresIn: "31d" },
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>("TICKET_SECRET"),
+        signOptions: {
+          expiresIn: "31d",
+        },
+      }),
     }),
     WalletTransactionModule,
     AuthModule,
