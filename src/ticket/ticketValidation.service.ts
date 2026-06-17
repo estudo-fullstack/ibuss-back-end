@@ -1,17 +1,22 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { Prisma, TicketStatusType } from "src/generated/prisma/client";
+import { TicketService } from "./ticket.service";
 import { PrismaService } from "src/prisma/prisma.service";
 import { TicketTokenService } from "./ticketToken.service";
 import { TicketNotFoundException } from "./errors/ticket.error";
+import { TicketDataDto } from "./dto/ticket-data.dto";
 
 @Injectable()
 export class TicketValidationService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly ticketToken: TicketTokenService
+    private readonly ticketToken: TicketTokenService,
+    private readonly ticketService: TicketService
   ) {}
-  async validateTicket(token: string) {
+  async validateTicket(ticketData: TicketDataDto) {
     try {
+      const { token, routeId } = ticketData;
+
       const validatedTicketToken = await this.ticketToken.verify(token);
 
       const ticketId = validatedTicketToken.ticketId;
@@ -19,8 +24,10 @@ export class TicketValidationService {
       const ticket = await this.prismaService.ticket.findUniqueOrThrow({
         where: {
           id: ticketId,
+          routeId: routeId,
         },
         select: {
+          id: true,
           expiresAt: true,
           status: true,
         },
@@ -41,7 +48,7 @@ export class TicketValidationService {
       }
 
       if (ticket.expiresAt <= new Date() && ticket.status === TicketStatusType.ACTIVE) {
-        await this.markAsExpired(ticketId);
+        await this.ticketService.markAsExpired(ticketId);
       }
 
       if (ticket.status === TicketStatusType.EXPIRED) {
@@ -51,28 +58,14 @@ export class TicketValidationService {
         };
       }
 
+      await this.ticketService.markAsUsed(ticket.id);
+
       return {
         success: true,
         result: "Ticket valid",
       };
     } catch (error) {
-      this.handlePrismaError(error);
-    }
-  }
-
-  async markAsExpired(ticketId: string) {
-    try {
-      return await this.prismaService.ticket.update({
-        where: { id: ticketId },
-        data: {
-          status: TicketStatusType.EXPIRED,
-        },
-        select: {
-          status: true,
-        },
-      });
-    } catch (error) {
-      this.handlePrismaError(error);
+      return this.handlePrismaError(error);
     }
   }
 
@@ -80,7 +73,6 @@ export class TicketValidationService {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
       throw error;
     }
-
     switch (error.code) {
       case "P2003":
         throw new BadRequestException("User or route not found");
