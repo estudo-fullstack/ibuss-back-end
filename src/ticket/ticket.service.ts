@@ -110,8 +110,8 @@ export class TicketService {
       const ticketToken = await this.ticketTokenService.generate(generatedTicketId);
 
       return {
-        ticketId: generatedTicketId,
         ticketToken: ticketToken,
+        ticket: purchasedTicket,
       };
     } catch (error) {
       return this.handlePrismaError(error);
