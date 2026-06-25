@@ -138,18 +138,30 @@ export class TicketService {
   }
 
   async markAsCanceled(userId: string, ticketId: string) {
-    // para cancelamento partindo do usuário logado
     try {
+      const ticket = await this.prismaService.ticket.findUnique({
+        where: { id: ticketId, userId },
+        select: { status: true, expiresAt: true },
+      });
+
+      if (!ticket) throw new TicketNotFoundException();
+
+      if (ticket.status !== TicketStatusType.ACTIVE) {
+        throw new BadRequestException("Ticket cannot be canceled");
+      }
+      if (ticket.expiresAt < new Date()) {
+        throw new BadRequestException("Ticket has already expired");
+      }
+
       return await this.prismaService.ticket.update({
-        where: { id: ticketId, userId: userId },
-        data: {
-          status: TicketStatusType.CANCELED,
-        },
-        select: {
-          status: true,
-        },
+        where: { id: ticketId, userId },
+        data: { status: TicketStatusType.CANCELED },
+        select: { id: true, status: true },
       });
     } catch (error) {
+      if (error instanceof BadRequestException || error instanceof TicketNotFoundException) {
+        throw error;
+      }
       return this.handlePrismaError(error);
     }
   }
