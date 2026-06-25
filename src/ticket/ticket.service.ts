@@ -1,21 +1,20 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { WalletTransactionService } from "src/wallet-transaction/wallet-transaction.service";
-import { CreateTicketDto } from "./dto/create-ticket.dto";
+import { TicketTokenService } from "./ticketToken.service";
+import { PurchaseTicketDto } from "./dto/create-ticket.dto";
 import { Prisma, TicketStatusType } from "src/generated/prisma/client";
+import { TicketNotFoundException } from "./errors/ticket.error";
 
 @Injectable()
 export class TicketService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly walletTransactionService: WalletTransactionService
+    private readonly walletTransactionService: WalletTransactionService,
+    private readonly ticketTokenService: TicketTokenService
   ) {}
 
-  private isForeignKeyError(error: unknown) {
-    return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003";
-  }
-
-  async findByUser(userId: string, status: TicketStatusType) {
+  async findManyByUserAndStatus(userId: string, status: TicketStatusType) {
     return this.prismaService.ticket.findMany({
       where: {
         userId,
@@ -39,28 +38,28 @@ export class TicketService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(userId: string, ticketId: string) {
     return await this.prismaService.ticket.findUnique({
-      where: { id },
+      where: { id: ticketId, userId: userId },
       select: {
         id: true,
         purchasePrice: true,
         status: true,
         purchaseAt: true,
         usedAt: true,
+        expiresAt: true,
         route: {
           select: {
             routeNumber: true,
             origin: true,
             destination: true,
-            price: true,
           },
         },
       },
     });
   }
 
-  async purchase(userId: string, purchaseData: CreateTicketDto) {
+  async purchase(userId: string, purchaseData: PurchaseTicketDto) {
     const balance = await this.walletTransactionService.getBalance(userId);
 
     if (balance < purchaseData.purchasePrice) {
@@ -68,35 +67,133 @@ export class TicketService {
     }
 
     try {
-      return await this.prismaService.$transaction(async (tx) => {
-        const walletTransaction = await tx.walletTransaction.create({
-          data: {
-            userId,
-            transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
-            transactionType: "WITHDRAWAL",
-          },
-        });
+      const purchaseAt = new Date();
 
-        return tx.ticket.create({
-          data: {
-            userId,
-            routeId: purchaseData.routeId,
-            walletTransactionId: walletTransaction.id,
-            purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
-            purchaseAt: new Date(),
+      const expiresAt = new Date(purchaseAt);
+      expiresAt.setDate(expiresAt.getDate() + 30);
+
+      const purchasedTicket = await this.prismaService.walletTransaction.create({
+        data: {
+          userId,
+          transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
+          transactionType: "WITHDRAWAL",
+          ticket: {
+            create: {
+              userId: userId,
+              routeId: purchaseData.routeId,
+              purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
+              purchaseAt: purchaseAt,
+              expiresAt: expiresAt,
+            },
           },
-          select: {
-            status: true,
-            purchaseAt: true,
+        },
+        select: {
+          transactionAmount: true,
+          ticket: {
+            select: {
+              id: true,
+              status: true,
+              expiresAt: true,
+              route: {
+                select: {
+                  origin: true,
+                  destination: true,
+                },
+              },
+            },
           },
-        });
+        },
+      });
+
+      const generatedTicketId = purchasedTicket.ticket!.id;
+
+      const ticketToken = await this.ticketTokenService.generate(generatedTicketId);
+
+      return {
+        ticketToken: ticketToken,
+        ticket: purchasedTicket,
+      };
+    } catch (error) {
+      return this.handlePrismaError(error);
+    }
+  }
+
+  async markAsUsed(ticketId: string) {
+    try {
+      return await this.prismaService.ticket.update({
+        where: {
+          id: ticketId,
+        },
+        data: {
+          status: TicketStatusType.USED,
+          usedAt: new Date(),
+        },
+        select: {
+          status: true,
+        },
       });
     } catch (error) {
-      if (this.isForeignKeyError(error)) {
-        throw new BadRequestException("User or route not found");
+      return this.handlePrismaError(error);
+    }
+  }
+
+  async markAsCanceled(userId: string, ticketId: string) {
+    try {
+      const ticket = await this.prismaService.ticket.findUnique({
+        where: { id: ticketId, userId },
+        select: { status: true, expiresAt: true },
+      });
+
+      if (!ticket) throw new TicketNotFoundException();
+
+      if (ticket.status !== TicketStatusType.ACTIVE) {
+        throw new BadRequestException("Ticket cannot be canceled");
+      }
+      if (ticket.expiresAt < new Date()) {
+        throw new BadRequestException("Ticket has already expired");
       }
 
+      return await this.prismaService.ticket.update({
+        where: { id: ticketId, userId },
+        data: { status: TicketStatusType.CANCELED },
+        select: { id: true, status: true },
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof TicketNotFoundException) {
+        throw error;
+      }
+      return this.handlePrismaError(error);
+    }
+  }
+
+  async markAsExpired(ticketId: string) {
+    try {
+      return await this.prismaService.ticket.update({
+        where: { id: ticketId },
+        data: {
+          status: TicketStatusType.EXPIRED,
+        },
+        select: {
+          status: true,
+        },
+      });
+    } catch (error) {
+      return this.handlePrismaError(error);
+    }
+  }
+
+  private handlePrismaError(error: unknown): never {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
       throw error;
+    }
+
+    switch (error.code) {
+      case "P2003":
+        throw new BadRequestException("User or route not found");
+      case "P2025":
+        throw new TicketNotFoundException();
+      default:
+        throw error;
     }
   }
 }

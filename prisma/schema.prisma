@@ -85,6 +85,7 @@ enum TicketStatusType {
   ACTIVE
   USED
   CANCELED
+  EXPIRED
 }
 
 model Ticket {
@@ -103,6 +104,7 @@ model Ticket {
   status TicketStatusType @default(ACTIVE)
 
   purchaseAt DateTime
+  expiresAt DateTime
   usedAt DateTime?
 }
 
