@@ -5,6 +5,7 @@ import { TicketTokenService } from "./ticketToken.service";
 import { PurchaseTicketDto } from "./dto/create-ticket.dto";
 import { Prisma, TicketStatusType } from "src/generated/prisma/client";
 import { TicketNotFoundException } from "./errors/ticket.error";
+import { TransactionType } from "src/generated/prisma/enums";
 
 @Injectable()
 export class TicketService {
@@ -139,24 +140,49 @@ export class TicketService {
 
   async markAsCanceled(userId: string, ticketId: string) {
     try {
-      const ticket = await this.prismaService.ticket.findUnique({
-        where: { id: ticketId, userId },
-        select: { status: true, expiresAt: true },
-      });
+      return await this.prismaService.$transaction(async (tx) => {
+        const ticket = await tx.ticket.findUniqueOrThrow({
+          where: { id: ticketId, userId },
+          select: { purchasePrice: true, purchaseAt: true, status: true, expiresAt: true },
+        });
 
-      if (!ticket) throw new TicketNotFoundException();
+        if (ticket.status !== TicketStatusType.ACTIVE) {
+          throw new BadRequestException("Ticket cannot be canceled");
+        }
+        if (ticket.expiresAt < new Date()) {
+          throw new BadRequestException("Ticket has already expired");
+        }
 
-      if (ticket.status !== TicketStatusType.ACTIVE) {
-        throw new BadRequestException("Ticket cannot be canceled");
-      }
-      if (ticket.expiresAt < new Date()) {
-        throw new BadRequestException("Ticket has already expired");
-      }
+        const refundDeadline = new Date(ticket.purchaseAt);
 
-      return await this.prismaService.ticket.update({
-        where: { id: ticketId, userId },
-        data: { status: TicketStatusType.CANCELED },
-        select: { id: true, status: true },
+        refundDeadline.setDate(refundDeadline.getDate() + 7);
+
+        const shouldRefund = new Date() <= refundDeadline;
+
+        if (shouldRefund) {
+          await tx.walletTransaction.create({
+            data: {
+              userId,
+              transactionAmount: ticket.purchasePrice,
+              transactionType: TransactionType.DEPOSIT,
+            },
+            select: {
+              transactionAmount: true,
+              transactionType: true,
+            },
+          });
+        }
+
+        const updatedTicket = await tx.ticket.update({
+          where: { id: ticketId },
+          data: { status: TicketStatusType.CANCELED },
+          select: { id: true, status: true },
+        });
+
+        return {
+          ticket: updatedTicket,
+          refunded: shouldRefund,
+        };
       });
     } catch (error) {
       if (error instanceof BadRequestException || error instanceof TicketNotFoundException) {
