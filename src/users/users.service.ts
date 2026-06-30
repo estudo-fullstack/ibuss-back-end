@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import bcrypt from "bcrypt";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "src/generated/prisma/client";
+import { UsersRepository } from "./users.repository";
 import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -9,8 +10,11 @@ import { UserNotFoundException } from "./errors/users.error";
 
 @Injectable()
 export class UsersService {
-  constructor(private prismaService: PrismaService) {}
-  // Posteriormente esses métodos serão extraídos para uma classe separada para ser mais reutilizavel
+  constructor(
+    private prismaService: PrismaService,
+    private usersRepository: UsersRepository
+  ) {}
+
   private isRecordNotFoundError(error: unknown) {
     return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025";
   }
@@ -21,19 +25,10 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(createUserDto.password, 10);
-    const { phoneNumber: phoneNumber, ...rest } = createUserDto;
 
-    return this.prismaService.user.create({
-      data: {
-        ...rest,
-        password: passwordHash,
-        phoneNumber,
-      },
-      select: {
-        name: true,
-        email: true,
-        phoneNumber: true,
-      },
+    return this.usersRepository.create({
+      ...createUserDto,
+      password: passwordHash,
     });
   }
 
