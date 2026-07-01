@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   ParseUUIDPipe,
+  Req,
   UseGuards,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
@@ -13,6 +14,7 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import type { Request } from "express";
 
 @Controller("users")
 export class UsersController {
@@ -24,15 +26,15 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("me/:id")
-  findOne(@Param("id", new ParseUUIDPipe()) id: string) {
-    return this.usersService.findOne(id);
+  @Get("me")
+  findOne(@Req() req: Request) {
+    return this.usersService.findOne(req.user!.id);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch("me/:id")
-  update(@Param("id", new ParseUUIDPipe()) id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  @Patch("me")
+  update(@Req() req: Request, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(req.user!.id, updateUserDto);
   }
 
   @Patch("me/password/:id")
@@ -44,8 +46,8 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch("me/status/deactivate/:id")
-  deactivateUser(@Param("id", new ParseUUIDPipe()) id: string) {
-    return this.usersService.deactivateUser(id);
+  @Patch("me/status/deactivate")
+  deactivateUser(@Req() req: Request) {
+    return this.usersService.deactivateUser(req.user!.id);
   }
 }
