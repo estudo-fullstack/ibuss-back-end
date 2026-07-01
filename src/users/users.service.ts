@@ -33,22 +33,7 @@ export class UsersService {
   }
 
   async findOne(id: string) {
-    const user = await this.prismaService.user.findUnique({
-      where: {
-        id: id,
-      },
-      select: {
-        name: true,
-        email: true,
-        phoneNumber: true,
-      },
-    });
-
-    if (!user) {
-      throw new UserNotFoundException();
-    }
-
-    return user;
+    return this.usersRepository.findById(id);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
