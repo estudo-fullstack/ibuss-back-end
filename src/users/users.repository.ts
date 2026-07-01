@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma } from "src/generated/prisma/client";
+import { Prisma, UserStatus } from "src/generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { UserAlreadyExistsException, UserNotFoundException } from "./errors/users.error";
 
@@ -36,6 +36,54 @@ export class UsersRepository {
       throw new UserNotFoundException();
     }
     return user;
+  }
+
+  async updateById(id: string, data: Prisma.UserUpdateInput) {
+    try {
+      return await this.prismaService.user.update({
+        data,
+        where: { id },
+        select: {
+          name: true,
+          email: true,
+          phoneNumber: true,
+        },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async updatePasswordById(id: string, passwordHash: string) {
+    try {
+      return await this.prismaService.user.update({
+        data: { password: passwordHash },
+        where: { id },
+        select: {
+          name: true,
+          email: true,
+          phoneNumber: true,
+        },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async deactivateById(id: string) {
+    try {
+      return await this.prismaService.user.update({
+        data: { status: UserStatus.INACTIVE },
+        where: { id },
+        select: {
+          name: true,
+          email: true,
+          phoneNumber: true,
+        },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
   }
 
   private handlePrismaError(error: unknown): never {
