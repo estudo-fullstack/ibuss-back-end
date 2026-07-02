@@ -1,5 +1,5 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
+import { Injectable } from "@nestjs/common";
+import { AuthRepository } from "./auth.repository";
 import { LoginDto } from "./dto/login.dto";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
@@ -12,14 +12,12 @@ import {
 @Injectable()
 export class AuthService {
   constructor(
-    private prismaService: PrismaService,
+    private authRepository: AuthRepository,
     private jwtService: JwtService
   ) {}
 
   async login(loginDto: LoginDto) {
-    const user = await this.prismaService.user.findUnique({
-      where: { email: loginDto.email },
-    });
+    const user = await this.authRepository.findByEmail(loginDto.email);
 
     if (!user) {
       throw new InvalidCredentialsException();
@@ -31,7 +29,7 @@ export class AuthService {
 
     if (user.status === "SUSPENDED") {
       throw new UserSuspendedException();
-    }    
+    }
 
     const passwordMatch = await bcrypt.compare(loginDto.password, user.password);
 
