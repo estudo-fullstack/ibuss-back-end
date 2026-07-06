@@ -49,8 +49,10 @@ function createRoute(route: {
   tripDuration: number;
   price: number;
 }) {
-  return prisma.route.create({
-    data: {
+  return prisma.route.upsert({
+    where: { routeNumber: route.routeNumber },  
+    update: {}, 
+    create: {
       companyId: route.companyId,
       routeNumber: route.routeNumber,
       origin: route.origin,
