@@ -29,6 +29,7 @@ export class UsersRepository {
         name: true,
         email: true,
         phoneNumber: true,
+        avatarId: true,
       },
     });
 
@@ -47,6 +48,7 @@ export class UsersRepository {
           name: true,
           email: true,
           phoneNumber: true,
+          avatarId: true,
         },
       });
     } catch (error) {
