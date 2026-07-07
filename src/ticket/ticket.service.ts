@@ -5,7 +5,6 @@ import { TicketTokenService } from "./ticketToken.service";
 import { PurchaseTicketDto } from "./dto/create-ticket.dto";
 import { Prisma, TicketStatusType } from "src/generated/prisma/client";
 import { TicketNotFoundException } from "./errors/ticket.error";
-import { TransactionType } from "src/generated/prisma/enums";
 import { WalletRepository } from "src/wallet-transaction/wallet.repository";
 
 @Injectable()

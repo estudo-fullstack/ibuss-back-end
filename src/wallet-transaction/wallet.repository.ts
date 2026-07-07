@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma, TransactionType } from "../generated/prisma/client";
-import { Decimal } from "src/generated/prisma/internal/prismaNamespace";
 
 @Injectable()
 export class WalletRepository {
@@ -33,13 +32,13 @@ export class WalletRepository {
     return totalDeposits - totalWithdrawals;
   }
 
-  async deposit(userId: string, amount: Decimal, tx?: Prisma.TransactionClient) {
+  async deposit(userId: string, amount: Prisma.Decimal, tx?: Prisma.TransactionClient) {
     const client = this.getClient(tx);
 
     return client.walletTransaction.create({
       data: {
         userId,
-        transactionAmount: new Prisma.Decimal(amount),
+        transactionAmount: amount,
         transactionType: TransactionType.DEPOSIT,
       },
       select: {

@@ -25,7 +25,7 @@ export class WalletTransactionService {
     }
 
     try {
-      return this.walletRepository.deposit(userId, amount);
+      return this.walletRepository.deposit(userId, Prisma.Decimal(amount));
     } catch (error) {
       if (this.isRecordNotFoundError(error)) {
         throw new WalletUserNotFoundException();

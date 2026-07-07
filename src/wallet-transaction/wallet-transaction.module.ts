@@ -8,6 +8,6 @@ import { WalletRepository } from "./wallet.repository";
   imports: [AuthModule],
   controllers: [WalletTransactionController],
   providers: [WalletTransactionService, WalletRepository],
-  exports: [WalletTransactionService],
+  exports: [WalletTransactionService, WalletRepository],
 })
 export class WalletTransactionModule {}
