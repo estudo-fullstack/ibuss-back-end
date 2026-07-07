@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
+import { TicketRepository } from "./ticket.repository";
 import { WalletTransactionService } from "src/wallet-transaction/wallet-transaction.service";
 import { TicketTokenService } from "./ticketToken.service";
 import { PurchaseTicketDto } from "./dto/create-ticket.dto";
@@ -11,53 +12,17 @@ import { TransactionType } from "src/generated/prisma/enums";
 export class TicketService {
   constructor(
     private readonly prismaService: PrismaService,
+    private readonly ticketRepository: TicketRepository,
     private readonly walletTransactionService: WalletTransactionService,
     private readonly ticketTokenService: TicketTokenService
   ) {}
 
   async findManyByUserAndStatus(userId: string, status: TicketStatusType) {
-    return this.prismaService.ticket.findMany({
-      where: {
-        userId,
-        status,
-      },
-      select: {
-        id: true,
-        purchasePrice: true,
-        status: true,
-        purchaseAt: true,
-        usedAt: true,
-        route: {
-          select: {
-            routeNumber: true,
-            origin: true,
-            destination: true,
-            price: true,
-          },
-        },
-      },
-    });
+    return this.ticketRepository.findManyByUserAndStatus(userId, status);
   }
 
   async findOne(userId: string, ticketId: string) {
-    return await this.prismaService.ticket.findUnique({
-      where: { id: ticketId, userId: userId },
-      select: {
-        id: true,
-        purchasePrice: true,
-        status: true,
-        purchaseAt: true,
-        usedAt: true,
-        expiresAt: true,
-        route: {
-          select: {
-            routeNumber: true,
-            origin: true,
-            destination: true,
-          },
-        },
-      },
-    });
+    return this.ticketRepository.findOneByIdAndUser(userId, ticketId);
   }
 
   async purchase(userId: string, purchaseData: PurchaseTicketDto) {
@@ -121,18 +86,7 @@ export class TicketService {
 
   async markAsUsed(ticketId: string) {
     try {
-      return await this.prismaService.ticket.update({
-        where: {
-          id: ticketId,
-        },
-        data: {
-          status: TicketStatusType.USED,
-          usedAt: new Date(),
-        },
-        select: {
-          status: true,
-        },
-      });
+      return await this.ticketRepository.markAsUsed(ticketId);
     } catch (error) {
       return this.handlePrismaError(error);
     }
@@ -140,25 +94,28 @@ export class TicketService {
 
   async markAsCanceled(userId: string, ticketId: string) {
     try {
-      return await this.prismaService.$transaction(async (tx) => {
-        const ticket = await tx.ticket.findUniqueOrThrow({
-          where: { id: ticketId, userId },
-          select: { purchasePrice: true, purchaseAt: true, status: true, expiresAt: true },
-        });
+      return this.prismaService.$transaction(async (tx) => {
+        //find ticket
+        const ticket = await this.ticketRepository.findOneByIdAndUserWithTransaction(
+          tx,
+          userId,
+          ticketId
+        );
 
         if (ticket.status !== TicketStatusType.ACTIVE) {
           throw new BadRequestException("Ticket cannot be canceled");
         }
+
         if (ticket.expiresAt < new Date()) {
           throw new BadRequestException("Ticket has already expired");
         }
 
+        //check if ticket is eligible for refund
         const refundDeadline = new Date(ticket.purchaseAt);
-
         refundDeadline.setDate(refundDeadline.getDate() + 7);
-
         const shouldRefund = new Date() <= refundDeadline;
 
+        //refund ticket
         if (shouldRefund) {
           await tx.walletTransaction.create({
             data: {
@@ -173,11 +130,12 @@ export class TicketService {
           });
         }
 
-        const updatedTicket = await tx.ticket.update({
-          where: { id: ticketId },
-          data: { status: TicketStatusType.CANCELED },
-          select: { id: true, status: true },
-        });
+        //update ticket status
+        const updatedTicket = await this.ticketRepository.updateStatusWithTransaction(
+          tx,
+          ticketId,
+          TicketStatusType.CANCELED
+        );
 
         return {
           ticket: updatedTicket,
@@ -194,15 +152,7 @@ export class TicketService {
 
   async markAsExpired(ticketId: string) {
     try {
-      return await this.prismaService.ticket.update({
-        where: { id: ticketId },
-        data: {
-          status: TicketStatusType.EXPIRED,
-        },
-        select: {
-          status: true,
-        },
-      });
+      return await this.ticketRepository.updateStatus(ticketId, TicketStatusType.EXPIRED);
     } catch (error) {
       return this.handlePrismaError(error);
     }
