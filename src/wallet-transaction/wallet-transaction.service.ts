@@ -1,44 +1,22 @@
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "src/generated/prisma/client";
 import {
   InvalidTransactionAmountException,
   WalletUserNotFoundException,
 } from "./errors/wallet-transaction.error";
 import { TransactionType } from "../generated/prisma/enums";
+import { WalletRepository } from "./wallet.repository";
 
 @Injectable()
 export class WalletTransactionService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(private readonly walletRepository: WalletRepository) {}
 
   private isRecordNotFoundError(error: unknown) {
     return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025";
   }
 
   async getBalance(userId: string) {
-    const deposits = await this.prismaService.walletTransaction.aggregate({
-      where: {
-        userId,
-        transactionType: TransactionType.DEPOSIT,
-      },
-      _sum: {
-        transactionAmount: true,
-      },
-    });
-
-    const withdrawals = await this.prismaService.walletTransaction.aggregate({
-      where: {
-        userId,
-        transactionType: TransactionType.WITHDRAWAL,
-      },
-      _sum: {
-        transactionAmount: true,
-      },
-    });
-
-    const totalDeposits = Number(deposits._sum.transactionAmount ?? 0);
-    const totalWithdrawals = Number(withdrawals._sum.transactionAmount ?? 0);
-    return totalDeposits - totalWithdrawals;
+    return this.walletRepository.getBalance(userId);
   }
 
   async deposit(userId: string, amount: number) {
@@ -47,13 +25,7 @@ export class WalletTransactionService {
     }
 
     try {
-      return this.prismaService.walletTransaction.create({
-        data: {
-          userId,
-          transactionAmount: new Prisma.Decimal(amount),
-          transactionType: TransactionType.DEPOSIT,
-        },
-      });
+      return this.walletRepository.deposit(userId, amount);
     } catch (error) {
       if (this.isRecordNotFoundError(error)) {
         throw new WalletUserNotFoundException();
@@ -63,21 +35,6 @@ export class WalletTransactionService {
   }
 
   async getExtract(userId: string, type?: TransactionType) {
-    const transactions = await this.prismaService.walletTransaction.findMany({
-      where: {
-        userId,
-        ...(type && { transactionType: type }),
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return transactions.map((transaction) => ({
-      id: transaction.id,
-      amount: Number(transaction.transactionAmount),
-      type: transaction.transactionType,
-      createdAt: transaction.createdAt,
-    }));
+    return this.walletRepository.getExtract(userId, type);
   }
 }

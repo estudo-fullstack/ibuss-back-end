@@ -1,7 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { TicketStatusType } from "src/generated/prisma/enums";
+import { TicketStatusType, TransactionType } from "src/generated/prisma/enums";
 import { Prisma } from "../generated/prisma/client";
+import { PurchaseTicketDto } from "./dto/create-ticket.dto";
 
 @Injectable()
 export class TicketRepository {
@@ -28,8 +29,10 @@ export class TicketRepository {
     });
   }
 
-  async findOneByIdAndUser(userId: string, ticketId: string) {
-    return this.prismaService.ticket.findUnique({
+  async findOneByIdAndUser(userId: string, ticketId: string, tx?: Prisma.TransactionClient) {
+    const client = this.getClient(tx);
+
+    return client.ticket.findUnique({
       where: { id: ticketId, userId: userId },
       select: {
         id: true,
@@ -49,17 +52,6 @@ export class TicketRepository {
     });
   }
 
-  async findOneByIdAndUserWithTransaction(
-    tx: Prisma.TransactionClient,
-    userId: string,
-    ticketId: string
-  ) {
-    return await tx.ticket.findUniqueOrThrow({
-      where: { id: ticketId, userId },
-      select: { purchasePrice: true, purchaseAt: true, status: true, expiresAt: true },
-    });
-  }
-
   async markAsUsed(ticketId: string) {
     return this.prismaService.ticket.update({
       where: {
@@ -75,27 +67,57 @@ export class TicketRepository {
     });
   }
 
-  async updateStatusWithTransaction(
-    tx: Prisma.TransactionClient,
-    ticketId: string,
-    status: TicketStatusType
-  ) {
-    return tx.ticket.update({
+  async updateStatus(ticketId: string, status: TicketStatusType, tx?: Prisma.TransactionClient) {
+    const client = this.getClient(tx);
+
+    return await client.ticket.update({
       where: { id: ticketId },
-      data: { status },
+      data: { status: status },
       select: { id: true, status: true },
     });
   }
 
-  async updateStatus(ticketId: string, status: TicketStatusType) {
-    return await this.prismaService.ticket.update({
-      where: { id: ticketId },
+  async purchase(
+    userId: string,
+    purchaseData: PurchaseTicketDto,
+    purchaseAt: Date,
+    expiresAt: Date
+  ) {
+    return await this.prismaService.walletTransaction.create({
       data: {
-        status: TicketStatusType.EXPIRED,
+        userId,
+        transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
+        transactionType: TransactionType.WITHDRAWAL,
+        ticket: {
+          create: {
+            userId,
+            routeId: purchaseData.routeId,
+            purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
+            purchaseAt,
+            expiresAt,
+          },
+        },
       },
       select: {
-        status: true,
+        transactionAmount: true,
+        ticket: {
+          select: {
+            id: true,
+            status: true,
+            expiresAt: true,
+            route: {
+              select: {
+                origin: true,
+                destination: true,
+              },
+            },
+          },
+        },
       },
     });
+  }
+
+  private getClient(tx?: Prisma.TransactionClient) {
+    return tx ?? this.prismaService;
   }
 }
