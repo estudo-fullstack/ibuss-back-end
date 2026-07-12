@@ -1,9 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-import { IsEmail, IsNotEmpty, IsPhoneNumber, MinLength } from "class-validator";
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsPhoneNumber,
+  IsString,
+  MaxLength,
+  MinLength,
+} from "class-validator";
 import { IsCPF } from "../../common/validators/is-cpf-validator";
 
 export class CreateUserDto {
   @IsNotEmpty()
+  @IsString()
+  @MaxLength(100)
   name!: string;
 
   @IsNotEmpty()
@@ -19,6 +28,7 @@ export class CreateUserDto {
   phoneNumber!: string;
 
   @IsNotEmpty()
-  @MinLength(5)
+  @MinLength(6)
+  @MaxLength(12)
   password!: string;
 }

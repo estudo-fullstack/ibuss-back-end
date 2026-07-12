@@ -1,22 +1,22 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-import { PartialType } from "@nestjs/mapped-types";
-import { CreateUserDto } from "./create-user.dto";
-import { IsEmail, IsPhoneNumber } from "class-validator";
+import { IsEmail, IsOptional, IsPhoneNumber, IsString, MaxLength } from "class-validator";
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {
-  /**
-   * Permitir atualizar apenas:
-   * nome
-   * email
-   * telefone
-   *
-   * Não permitir alterar: cpf
-   */
+export class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   name?: string;
 
+  @IsOptional()
   @IsEmail()
   email?: string;
 
+  @IsOptional()
   @IsPhoneNumber("BR")
   phoneNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  avatarId?: string;
 }

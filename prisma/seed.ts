@@ -16,6 +16,7 @@ function createUser(user: {
   email: string;
   phoneNumber: string;
   password: string;
+  avatarId: string;
 }) {
   return prisma.user.upsert({
     where: { cpf: user.cpf },
@@ -26,6 +27,7 @@ function createUser(user: {
       email: user.email,
       password: user.password,
       phoneNumber: user.phoneNumber,
+      avatarId: user.avatarId,
     },
   });
 }
@@ -103,6 +105,7 @@ async function main() {
       email: "alice@prisma.com",
       password: passwordHash,
       phoneNumber: "11999999999",
+      avatarId: "avatar1",
     },
     {
       name: "bob",
@@ -110,6 +113,7 @@ async function main() {
       email: "bob@prisma.com",
       password: passwordHash,
       phoneNumber: "11999999999",
+      avatarId: "avatar2",
     },
     {
       name: "carol",
@@ -117,6 +121,7 @@ async function main() {
       email: "carol@prisma.com",
       password: passwordHash,
       phoneNumber: "11999999999",
+      avatarId: "avatar3",
     },
   ];
 
