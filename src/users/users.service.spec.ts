@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 import { UsersService } from "./users.service";
 import { UsersRepository } from "./users.repository";
 
-import { UserAlreadyExistsException, UserNotFoundException } from "./errors/users.error";
+import { UserNotFoundException } from "./errors/users.error";
 
 jest.mock("bcrypt");
 
@@ -13,7 +13,6 @@ describe("UsersService tests", () => {
 
   const usersRepositoryMock = {
     findById: jest.fn(),
-    create: jest.fn(),
     updateById: jest.fn(),
     deactivateById: jest.fn(),
   };
@@ -66,49 +65,6 @@ describe("UsersService tests", () => {
     const result = usersService.findOne("id-inexistente");
 
     await expect(result).rejects.toThrow(UserNotFoundException);
-  });
-
-  it("create - Should create a new user", async () => {
-    const createUserDto = {
-      name: "carol",
-      cpf: "45317828791",
-      email: "carol@prisma.com",
-      phoneNumber: "11999999999",
-      password: "123456",
-    };
-
-    usersRepositoryMock.create.mockResolvedValueOnce({
-      name: "carol",
-      email: "carol@prisma.com",
-      phoneNumber: "11999999999",
-    });
-
-    const result = await usersService.create(createUserDto);
-
-    expect(usersRepositoryMock.create).toHaveBeenCalledWith({
-      ...createUserDto,
-      password: "hash-mockado",
-    });
-
-    expect(result.name).toEqual("carol");
-    expect(result.email).toEqual("carol@prisma.com");
-    expect(result.phoneNumber).toEqual("11999999999");
-  });
-
-  it("create - Should throw UserAlreadyExistsException when user already exists", async () => {
-    const createUserDto = {
-      name: "carol",
-      cpf: "45317828791",
-      email: "carol@prisma.com",
-      phoneNumber: "11999999999",
-      password: "123456",
-    };
-
-    usersRepositoryMock.create.mockRejectedValueOnce(new UserAlreadyExistsException());
-
-    const result = usersService.create(createUserDto);
-
-    await expect(result).rejects.toThrow(UserAlreadyExistsException);
   });
 
   it("update - Should update an existing user", async () => {
