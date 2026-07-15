@@ -1,16 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  ParseUUIDPipe,
-  Req,
-  UseGuards,
-} from "@nestjs/common";
+import { Controller, Get, Body, Patch, Param, ParseUUIDPipe, Req, UseGuards } from "@nestjs/common";
 import { UsersService } from "./users.service";
-import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -19,11 +8,6 @@ import type { Request } from "express";
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  @Post("register")
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
 
   @UseGuards(JwtAuthGuard)
   @Get("me")

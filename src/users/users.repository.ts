@@ -7,21 +7,6 @@ import { UserAlreadyExistsException, UserNotFoundException } from "./errors/user
 export class UsersRepository {
   constructor(private prismaService: PrismaService) {}
 
-  async create(data: Prisma.UserCreateInput) {
-    try {
-      return await this.prismaService.user.create({
-        data,
-        select: {
-          name: true,
-          email: true,
-          phoneNumber: true,
-        },
-      });
-    } catch (error) {
-      this.handlePrismaError(error);
-    }
-  }
-
   async findById(id: string) {
     const user = await this.prismaService.user.findUnique({
       where: { id },
