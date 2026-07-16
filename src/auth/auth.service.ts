@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { AuthRepository } from "./auth.repository";
 import { LoginDto } from "./dto/login.dto";
+import { CreateUserDto } from "./dto/create-user.dto";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import {
@@ -15,6 +16,15 @@ export class AuthService {
     private authRepository: AuthRepository,
     private jwtService: JwtService
   ) {}
+
+  async create(createUserDto: CreateUserDto) {
+    const passwordHash = await bcrypt.hash(createUserDto.password, 10);
+
+    return this.authRepository.create({
+      ...createUserDto,
+      password: passwordHash,
+    });
+  }
 
   async login(loginDto: LoginDto) {
     const user = await this.authRepository.findByEmail(loginDto.email);
