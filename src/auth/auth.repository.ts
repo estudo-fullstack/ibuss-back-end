@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "src/generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
-import { UserAlreadyExistsException } from "../users/errors/users.error";
+import { UserAlreadyExistsException, UserNotFoundException } from "../users/errors/users.error";
 
 @Injectable()
 export class AuthRepository {
@@ -36,6 +36,32 @@ export class AuthRepository {
     });
   }
 
+  async findById(id: string) {
+    return this.prismaService.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+  }
+
+  async updatePasswordById(id: string, passwordHash: string) {
+    try {
+      return await this.prismaService.user.update({
+        data: { password: passwordHash },
+        where: { id },
+        select: {
+          name: true,
+          email: true,
+          phoneNumber: true,
+        },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
   private handlePrismaError(error: unknown): never {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
       throw error;
@@ -44,6 +70,8 @@ export class AuthRepository {
     switch (error.code) {
       case "P2002":
         throw new UserAlreadyExistsException();
+      case "P2025":
+        throw new UserNotFoundException();
       default:
         throw error;
     }

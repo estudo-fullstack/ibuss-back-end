@@ -1,7 +1,6 @@
-import { Controller, Get, Body, Patch, Param, ParseUUIDPipe, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Body, Patch, Req, UseGuards } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { UpdateUserDto } from "./dto/update-user.dto";
-import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import type { Request } from "express";
 
@@ -19,14 +18,6 @@ export class UsersController {
   @Patch("me")
   update(@Req() req: Request, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(req.user!.id, updateUserDto);
-  }
-
-  @Patch("me/password/:id")
-  updatePassword(
-    @Param("id", new ParseUUIDPipe()) id: string,
-    @Body() updateUserPasswordDto: UpdateUserPasswordDto
-  ) {
-    return this.usersService.updatePassword(id, updateUserPasswordDto);
   }
 
   @UseGuards(JwtAuthGuard)

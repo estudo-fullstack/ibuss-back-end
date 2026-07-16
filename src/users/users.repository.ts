@@ -41,22 +41,6 @@ export class UsersRepository {
     }
   }
 
-  async updatePasswordById(id: string, passwordHash: string) {
-    try {
-      return await this.prismaService.user.update({
-        data: { password: passwordHash },
-        where: { id },
-        select: {
-          name: true,
-          email: true,
-          phoneNumber: true,
-        },
-      });
-    } catch (error) {
-      this.handlePrismaError(error);
-    }
-  }
-
   async deactivateById(id: string) {
     try {
       return await this.prismaService.user.update({
