@@ -1,7 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import bcrypt from "bcrypt";
 import { UsersRepository } from "./users.repository";
-import { UpdateUserPasswordDto } from "./dto/update-user-password.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 
 @Injectable()
@@ -14,12 +12,6 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     return this.usersRepository.updateById(id, updateUserDto);
-  }
-
-  async updatePassword(id: string, updateUserPasswordDto: UpdateUserPasswordDto) {
-    const passwordHash = await bcrypt.hash(updateUserPasswordDto.password, 10);
-
-    return this.usersRepository.updatePasswordById(id, passwordHash);
   }
 
   async deactivateUser(id: string) {

@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { AuthRepository } from "./auth.repository";
 import { LoginDto } from "./dto/login.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
+import { ChangeUserPasswordDto } from "./dto/change-user-password.dto";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import {
@@ -9,6 +10,7 @@ import {
   UserInactiveException,
   UserSuspendedException,
 } from "./errors/auth.error";
+import { UserNotFoundException } from "../users/errors/users.error";
 
 @Injectable()
 export class AuthService {
@@ -57,5 +59,26 @@ export class AuthService {
         email: user.email,
       },
     };
+  }
+
+  async changePassword(id: string, changeUserPasswordDto: ChangeUserPasswordDto) {
+    const user = await this.authRepository.findById(id);
+
+    if (!user) {
+      throw new UserNotFoundException();
+    }
+
+    const passwordMatch = await bcrypt.compare(
+      changeUserPasswordDto.currentPassword,
+      user.password
+    );
+
+    if (!passwordMatch) {
+      throw new InvalidCredentialsException();
+    }
+
+    const passwordHash = await bcrypt.hash(changeUserPasswordDto.newPassword, 10);
+
+    return this.authRepository.updatePasswordById(id, passwordHash);
   }
 }

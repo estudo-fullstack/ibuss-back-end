@@ -1,12 +1,9 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import bcrypt from "bcrypt";
 
 import { UsersService } from "./users.service";
 import { UsersRepository } from "./users.repository";
 
 import { UserNotFoundException } from "./errors/users.error";
-
-jest.mock("bcrypt");
 
 describe("UsersService tests", () => {
   let usersService: UsersService;
@@ -16,8 +13,6 @@ describe("UsersService tests", () => {
     updateById: jest.fn(),
     deactivateById: jest.fn(),
   };
-
-  (bcrypt.hash as jest.Mock).mockResolvedValue("hash-mockado");
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({

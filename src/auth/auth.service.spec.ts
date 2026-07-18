@@ -5,7 +5,7 @@ import { AuthService } from "./auth.service";
 import { AuthRepository } from "./auth.repository";
 import { JwtService } from "@nestjs/jwt";
 import { InvalidCredentialsException, UserInactiveException } from "./errors/auth.error";
-import { UserAlreadyExistsException } from "../users/errors/users.error";
+import { UserAlreadyExistsException, UserNotFoundException } from "../users/errors/users.error";
 
 jest.mock("bcrypt");
 
@@ -15,6 +15,8 @@ describe("AuthService tests", () => {
   const authRepositoryMock = {
     create: jest.fn(),
     findByEmail: jest.fn(),
+    findById: jest.fn(),
+    updatePasswordById: jest.fn(),
   };
 
   const jwtServiceMock = {
@@ -193,6 +195,71 @@ describe("AuthService tests", () => {
       expect(result.accessToken).toEqual(expectedLoginData.accessToken);
 
       expect(result.user.id).toEqual(expectedLoginData.user.id);
+    });
+  });
+
+  describe("changePassword", () => {
+    const makeChangePasswordDto = (overrides = {}) => ({
+      currentPassword: "senha-antiga",
+      newPassword: "senha-nova-123",
+      ...overrides,
+    });
+
+    it("Should throw UserNotFoundException when user does not exist", async () => {
+      authRepositoryMock.findById.mockResolvedValueOnce(null);
+
+      const result = authService.changePassword("id-inexistente", makeChangePasswordDto());
+
+      await expect(result).rejects.toThrow(UserNotFoundException);
+      expect(authRepositoryMock.updatePasswordById).not.toHaveBeenCalled();
+    });
+
+    it("Should throw InvalidCredentialsException when current password is wrong", async () => {
+      authRepositoryMock.findById.mockResolvedValueOnce({
+        id: "uid",
+        password: "hash-correto",
+      });
+
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
+
+      const result = authService.changePassword(
+        "uid",
+        makeChangePasswordDto({ currentPassword: "senha-errada" })
+      );
+
+      await expect(result).rejects.toThrow(InvalidCredentialsException);
+      expect(bcrypt.compare).toHaveBeenCalledWith("senha-errada", "hash-correto");
+      expect(authRepositoryMock.updatePasswordById).not.toHaveBeenCalled();
+    });
+
+    it("Should hash new password and update when current password is correct", async () => {
+      const userId = "uid";
+
+      authRepositoryMock.findById.mockResolvedValueOnce({
+        id: userId,
+        password: "hash-correto",
+      });
+
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
+      (bcrypt.hash as jest.Mock).mockResolvedValueOnce("novo-hash");
+
+      const expectedData = {
+        name: "carol",
+        email: "carol@prisma.com",
+        phoneNumber: "11999999999",
+      };
+
+      authRepositoryMock.updatePasswordById.mockResolvedValueOnce(expectedData);
+
+      const result = await authService.changePassword(
+        userId,
+        makeChangePasswordDto({ currentPassword: "senha-correta", newPassword: "senha-nova-123" })
+      );
+
+      expect(bcrypt.compare).toHaveBeenCalledWith("senha-correta", "hash-correto");
+      expect(bcrypt.hash).toHaveBeenCalledWith("senha-nova-123", 10);
+      expect(authRepositoryMock.updatePasswordById).toHaveBeenCalledWith(userId, "novo-hash");
+      expect(result).toEqual(expectedData);
     });
   });
 });
