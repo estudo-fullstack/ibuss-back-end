@@ -24,7 +24,7 @@ export class UsersRepository {
     return user;
   }
 
-  async updateById(id: string, data: Prisma.UserUpdateInput) {
+  async updateAvatarById(id: string, data: Prisma.UserUpdateInput) {
     try {
       return await this.prismaService.user.update({
         data,
