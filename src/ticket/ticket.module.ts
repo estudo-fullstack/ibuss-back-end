@@ -7,6 +7,7 @@ import { TicketService } from "./ticket.service";
 import { TicketTokenService } from "./ticketToken.service";
 import { TicketValidationService } from "./ticketValidation.service";
 import { ConfigService } from "@nestjs/config";
+import { TicketRepository } from "./ticket.repository";
 
 @Module({
   imports: [
@@ -23,6 +24,6 @@ import { ConfigService } from "@nestjs/config";
     AuthModule,
   ],
   controllers: [TicketController],
-  providers: [TicketService, TicketTokenService, TicketValidationService],
+  providers: [TicketService, TicketTokenService, TicketValidationService, TicketRepository],
 })
 export class TicketModule {}
