@@ -11,7 +11,7 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    return this.usersRepository.updateById(id, updateUserDto);
+    return this.usersRepository.updateAvatarById(id, updateUserDto);
   }
 
   async deactivateUser(id: string) {
