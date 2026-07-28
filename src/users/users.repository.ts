@@ -24,6 +24,23 @@ export class UsersRepository {
     return user;
   }
 
+  async update(id: string, data: Prisma.UserUpdateInput) {
+    try {
+      return await this.prismaService.user.update({
+        data,
+        where: { id },
+        select: {
+          name: true,
+          email: true,
+          phoneNumber: true,
+          avatarId: true,
+        },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
   async updateAvatarById(id: string, data: Prisma.UserUpdateInput) {
     try {
       return await this.prismaService.user.update({
