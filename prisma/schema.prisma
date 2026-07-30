@@ -29,6 +29,7 @@ model User {
 
   tickets   Ticket[]
   transactions WalletTransaction[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model BusCompany {
@@ -128,4 +129,16 @@ model WalletTransaction {
   createdAt DateTime @default(now())
 
   ticket Ticket?
+}
+
+model PasswordResetToken {
+  id String @id @default(uuid())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  tokenHash String
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
 }
