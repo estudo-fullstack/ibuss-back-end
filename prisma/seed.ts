@@ -48,17 +48,21 @@ function createRoute(route: {
   routeNumber: string;
   origin: string;
   destination: string;
+  departureLocation: string;
+  arrivalLocation: string;
   tripDuration: number;
   price: number;
 }) {
   return prisma.route.upsert({
-    where: { routeNumber: route.routeNumber },  
-    update: {}, 
+    where: { routeNumber: route.routeNumber },
+    update: {},
     create: {
       companyId: route.companyId,
       routeNumber: route.routeNumber,
       origin: route.origin,
       destination: route.destination,
+      departureLocation: route.departureLocation,
+      arrivalLocation: route.arrivalLocation,
       tripDuration: route.tripDuration,
       price: route.price,
     },
@@ -144,6 +148,8 @@ async function main() {
       routeNumber: "EMTU-301",
       origin: "São Paulo - Jabaquara",
       destination: "Diadema",
+      departureLocation: "Terminal Jabaquara",
+      arrivalLocation: "Centro de Diadema",
       tripDuration: 40,
       price: 8.2,
     },
@@ -152,6 +158,8 @@ async function main() {
       routeNumber: "EMTU-402",
       origin: "São Paulo - Sacomã",
       destination: "São Bernardo do Campo",
+      departureLocation: "Terminal Sacomã",
+      arrivalLocation: "Terminal Ferrazópolis",
       tripDuration: 50,
       price: 9.0,
     },
@@ -160,6 +168,8 @@ async function main() {
       routeNumber: "COM-202",
       origin: "São Paulo - Barra Funda",
       destination: "Santos",
+      departureLocation: "Terminal Barra Funda",
+      arrivalLocation: "Rodoviária de Santos",
       tripDuration: 120,
       price: 39.5,
     },
@@ -235,6 +245,8 @@ async function main() {
         routeNumber: route.routeNumber,
         origin: route.origin,
         destination: route.destination,
+        departureLocation: route.departureLocation,
+        arrivalLocation: route.arrivalLocation,
         tripDuration: route.tripDuration,
         price: route.price,
       });
