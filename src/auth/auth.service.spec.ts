@@ -15,6 +15,7 @@ describe("AuthService tests", () => {
   const authRepositoryMock = {
     create: jest.fn(),
     findByEmail: jest.fn(),
+    existsByEmail: jest.fn(),
     findById: jest.fn(),
     updatePasswordById: jest.fn(),
   };
@@ -260,6 +261,34 @@ describe("AuthService tests", () => {
       expect(bcrypt.hash).toHaveBeenCalledWith("senha-nova-123", 10);
       expect(authRepositoryMock.updatePasswordById).toHaveBeenCalledWith(userId, "novo-hash");
       expect(result).toEqual(expectedData);
+    });
+  });
+
+  describe("forgotPassword", () => {
+    it("Should return the same generic message when the email exists", async () => {
+      authRepositoryMock.existsByEmail.mockResolvedValueOnce(true);
+
+      const result = await authService.forgotPassword({
+        email: "carol@prisma.com",
+      });
+
+      expect(authRepositoryMock.existsByEmail).toHaveBeenCalledWith("carol@prisma.com");
+      expect(result).toEqual({
+        message: "enviaremos instruções para redefinir sua senha",
+      });
+    });
+
+    it("Should return the same generic message when the email does not exist", async () => {
+      authRepositoryMock.existsByEmail.mockResolvedValueOnce(false);
+
+      const result = await authService.forgotPassword({
+        email: "notfound@email.com",
+      });
+
+      expect(authRepositoryMock.existsByEmail).toHaveBeenCalledWith("notfound@email.com");
+      expect(result).toEqual({
+        message: "enviaremos instruções para redefinir sua senha",
+      });
     });
   });
 });

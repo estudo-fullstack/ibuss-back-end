@@ -3,6 +3,7 @@ import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { ChangeUserPasswordDto } from "./dto/change-user-password.dto";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import type { Request } from "express";
 
@@ -18,6 +19,11 @@ export class AuthController {
   @Post("login")
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Post("forgot-password")
+  forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -36,6 +36,17 @@ export class AuthRepository {
     });
   }
 
+  async existsByEmail(email: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+      },
+    });
+
+    return !!user;
+  }
+
   async findById(id: string) {
     return this.prismaService.user.findUnique({
       where: { id },

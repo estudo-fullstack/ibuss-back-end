@@ -3,6 +3,7 @@ import { AuthRepository } from "./auth.repository";
 import { LoginDto } from "./dto/login.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { ChangeUserPasswordDto } from "./dto/change-user-password.dto";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import {
@@ -80,5 +81,13 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(changeUserPasswordDto.newPassword, 10);
 
     return this.authRepository.updatePasswordById(id, passwordHash);
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    await this.authRepository.existsByEmail(forgotPasswordDto.email);
+
+    return {
+      message: "enviaremos instruções para redefinir sua senha",
+    };
   }
 }
