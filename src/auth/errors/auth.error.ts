@@ -9,19 +9,13 @@ export class InvalidCredentialsException extends AppError {
 
 export class UserInactiveException extends AppError {
   constructor(message = "Inactive user") {
-    super(message, HttpStatus.UNAUTHORIZED);
+    super(message, HttpStatus.FORBIDDEN);
   }
 }
 
 export class UserSuspendedException extends AppError {
   constructor(message = "Suspended user") {
-    super(message, HttpStatus.UNAUTHORIZED);
-  }
-}
-
-export class PasswordResetTokenNotFoundException extends AppError {
-  constructor(message = "Token not found") {
-    super(message, HttpStatus.NOT_FOUND);
+    super(message, HttpStatus.FORBIDDEN);
   }
 }
 

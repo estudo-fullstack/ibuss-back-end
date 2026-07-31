@@ -1,10 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { Prisma } from "src/generated/prisma/client";
-import {
-  PasswordResetTokenNotFoundException,
-  PasswordResetTokenConflictException,
-} from "src/auth/errors/auth.error";
+import { PasswordResetTokenConflictException } from "src/auth/errors/auth.error";
 
 @Injectable()
 export class PasswordResetTokenRepository {
@@ -72,7 +69,7 @@ export class PasswordResetTokenRepository {
 
     switch (error.code) {
       case "P2025":
-        throw new PasswordResetTokenNotFoundException();
+        throw new BadRequestException("Unable to reset password!");
       case "P2003":
         throw new PasswordResetTokenConflictException();
       default:
