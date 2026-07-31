@@ -22,6 +22,46 @@ export class PasswordResetTokenRepository {
     }
   }
 
+  async getTokenHash(id: string) {
+    try {
+      return await this.prismaService.passwordResetToken.findUniqueOrThrow({
+        where: { id },
+        select: {
+          tokenHash: true,
+          expiresAt: true,
+          usedAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async markAsUsed(id: string, tx: Prisma.TransactionClient) {
+    try {
+      return await tx.passwordResetToken.update({
+        where: {
+          id,
+        },
+        data: {
+          usedAt: new Date(),
+        },
+        select: {
+          id: true,
+          usedAt: true,
+        },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
   private handlePrismaError(error: unknown): never {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
       throw error;
