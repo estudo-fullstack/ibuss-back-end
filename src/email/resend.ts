@@ -1,13 +1,14 @@
+import "dotenv/config";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function sendPasswordResetEmail(email: string) {
+export default async function sendPasswordResetEmail(email: string, link: string) {
   const { data, error } = await resend.emails.send({
     from: "Acme <onboarding@resend.dev>",
     to: [email],
     subject: "Redefinir senha",
-    html: "<strong>It works!</strong>",
+    html: `<strong>It works! ${link}</strong>`,
   });
 
   if (error) {
