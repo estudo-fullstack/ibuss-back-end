@@ -98,7 +98,7 @@ export class AuthService {
 
     if (!user) {
       return {
-        message: "enviaremos instruções para redefinir sua senha",
+        message: "we will send instructions to reset your password",
       };
     }
 
@@ -126,7 +126,7 @@ export class AuthService {
     await sendPasswordResetEmail(emailData);
 
     return {
-      message: "enviaremos instruções para redefinir sua senha",
+      message: "we will send instructions to reset your password",
     };
   }
 
