@@ -1,24 +1,30 @@
-import { Injectable } from "@nestjs/common";
-import { AuthRepository } from "./auth.repository";
-import { LoginDto } from "./dto/login.dto";
-import { CreateUserDto } from "./dto/create-user.dto";
-import { ChangeUserPasswordDto } from "./dto/change-user-password.dto";
-import { ForgotPasswordDto } from "./dto/forgot-password.dto";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
-import { buildPasswordResetLink, generatePasswordResetToken } from "src/email/password-reset-token";
+import { AuthRepository } from "./auth.repository";
+import { PasswordResetTokenRepository } from "./passwordResetToken.repository";
+import {
+  buildPasswordResetLink,
+  generatePasswordResetToken,
+  verifyPasswordResetToken,
+} from "src/email/password-reset-token";
+import { sendPasswordResetEmail, infoPasswordResetEmail } from "src/email/resend";
+import { PrismaService } from "src/prisma/prisma.service";
+import { CreateUserDto } from "./dto/create-user.dto";
+import { ChangeUserPasswordDto } from "./dto/change-user-password.dto";
+import { LoginDto } from "./dto/login.dto";
+import { ForgotPasswordDto, ResetPasswordDto } from "./dto/forgot-password.dto";
 import {
   InvalidCredentialsException,
   UserInactiveException,
   UserSuspendedException,
 } from "./errors/auth.error";
 import { UserNotFoundException } from "../users/errors/users.error";
-import { PasswordResetTokenRepository } from "./passwordResetToken.repository";
-import sendPasswordResetEmail from "src/email/resend";
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly prismaService: PrismaService,
     private authRepository: AuthRepository,
     private jwtService: JwtService,
     private passwordResetTokenRepository: PasswordResetTokenRepository
@@ -96,13 +102,8 @@ export class AuthService {
       };
     }
 
-    // gerar token e tokenhash
     const passwordResetToken = generatePasswordResetToken();
 
-    // montagem do link para ser enviado no email
-    const forgotPasswordLink = buildPasswordResetLink(passwordResetToken.token);
-
-    // tempo de validade do token
     const createdAt = new Date();
     const expiresAt = new Date(createdAt);
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
@@ -113,12 +114,47 @@ export class AuthService {
       expiresAt: expiresAt,
     };
 
-    await this.passwordResetTokenRepository.saveToken(data);
+    const savedToken = await this.passwordResetTokenRepository.saveToken(data);
 
-    await sendPasswordResetEmail(forgotPasswordDto.email, forgotPasswordLink);
+    const forgotPasswordLink = buildPasswordResetLink(passwordResetToken.token, savedToken.id);
+
+    const emailData = {
+      email: forgotPasswordDto.email,
+      link: forgotPasswordLink,
+    };
+
+    await sendPasswordResetEmail(emailData);
 
     return {
       message: "enviaremos instruções para redefinir sua senha",
     };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const storedTokenHash = await this.passwordResetTokenRepository.getTokenHash(
+      resetPasswordDto.id
+    );
+    const ferify = verifyPasswordResetToken(resetPasswordDto.token, storedTokenHash.tokenHash);
+
+    if (!ferify || new Date() > storedTokenHash.expiresAt || storedTokenHash.usedAt) {
+      throw new BadRequestException("Unable to reset password!");
+    }
+
+    const newPasswordHash = await bcrypt.hash(resetPasswordDto.password, 10);
+
+    const processUpdate = this.prismaService.$transaction(async (tx) => {
+      await this.passwordResetTokenRepository.markAsUsed(resetPasswordDto.id, tx);
+
+      const updated = await this.authRepository.updatePasswordById(
+        storedTokenHash.user.id,
+        newPasswordHash,
+        tx
+      );
+      return updated;
+    });
+
+    await infoPasswordResetEmail(storedTokenHash.user.email);
+
+    return processUpdate;
   }
 }

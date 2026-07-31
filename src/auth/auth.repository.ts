@@ -57,9 +57,11 @@ export class AuthRepository {
     });
   }
 
-  async updatePasswordById(id: string, passwordHash: string) {
+  async updatePasswordById(id: string, passwordHash: string, tx?: Prisma.TransactionClient) {
     try {
-      return await this.prismaService.user.update({
+      const client = this.getClient(tx);
+
+      return await client.user.update({
         data: { password: passwordHash },
         where: { id },
         select: {
@@ -71,6 +73,10 @@ export class AuthRepository {
     } catch (error) {
       this.handlePrismaError(error);
     }
+  }
+
+  private getClient(tx?: Prisma.TransactionClient) {
+    return tx ?? this.prismaService;
   }
 
   private handlePrismaError(error: unknown): never {
