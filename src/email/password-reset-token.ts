@@ -33,6 +33,6 @@ export function verifyPasswordResetToken(token: string, storedTokenHash: string)
   return timingSafeEqual(calculatedBuffer, storedBuffer);
 }
 
-export function buildPasswordResetLink(token: string) {
-  return `${process.env.URL_RESET_PASSWORD}?token=${token}`;
+export function buildPasswordResetLink(token: string, id: string) {
+  return `${process.env.URL_RESET_PASSWORD}?id=${id}&token=${token}`;
 }
