@@ -44,7 +44,7 @@ export class AuthRepository {
       },
     });
 
-    return !!user;
+    return user;
   }
 
   async findById(id: string) {

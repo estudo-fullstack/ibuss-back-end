@@ -1,13 +1,14 @@
 import { Module } from "@nestjs/common";
-import { AuthService } from "./auth.service";
-import { AuthRepository } from "./auth.repository";
-import { AuthController } from "./auth.controller";
-import { PrismaService } from "../prisma/prisma.service";
-import { JwtAuthGuard } from "./guards/jwt-auth.guard";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
+import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { JwtStrategy } from "./strategy/jwt.strategy";
-import { ConfigModule, ConfigService } from "@nestjs/config";
+import { AuthController } from "./auth.controller";
+import { PrismaService } from "../prisma/prisma.service";
+import { AuthService } from "./auth.service";
+import { AuthRepository } from "./auth.repository";
+import { PasswordResetTokenRepository } from "./passwordResetToken.repository";
 
 @Module({
   imports: [
@@ -22,7 +23,14 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, PrismaService, JwtAuthGuard, JwtStrategy],
+  providers: [
+    AuthService,
+    AuthRepository,
+    PasswordResetTokenRepository,
+    PrismaService,
+    JwtAuthGuard,
+    JwtStrategy,
+  ],
   exports: [JwtAuthGuard],
 })
 export class AuthModule {}

@@ -6,18 +6,22 @@ import { ChangeUserPasswordDto } from "./dto/change-user-password.dto";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
+import { buildPasswordResetLink, generatePasswordResetToken } from "src/email/password-reset-token";
 import {
   InvalidCredentialsException,
   UserInactiveException,
   UserSuspendedException,
 } from "./errors/auth.error";
 import { UserNotFoundException } from "../users/errors/users.error";
+import { PasswordResetTokenRepository } from "./passwordResetToken.repository";
+import sendPasswordResetEmail from "src/email/resend";
 
 @Injectable()
 export class AuthService {
   constructor(
     private authRepository: AuthRepository,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private passwordResetTokenRepository: PasswordResetTokenRepository
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -84,7 +88,34 @@ export class AuthService {
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
-    await this.authRepository.existsByEmail(forgotPasswordDto.email);
+    const user = await this.authRepository.existsByEmail(forgotPasswordDto.email);
+
+    if (!user) {
+      return {
+        message: "enviaremos instruções para redefinir sua senha",
+      };
+    }
+
+    // gerar token e tokenhash
+    const passwordResetToken = generatePasswordResetToken();
+
+    // montagem do link para ser enviado no email
+    const forgotPasswordLink = buildPasswordResetLink(passwordResetToken.token);
+
+    // tempo de validade do token
+    const createdAt = new Date();
+    const expiresAt = new Date(createdAt);
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+
+    const data = {
+      userId: user.id,
+      tokenHash: passwordResetToken.tokenHash,
+      expiresAt: expiresAt,
+    };
+
+    await this.passwordResetTokenRepository.saveToken(data);
+
+    await sendPasswordResetEmail(forgotPasswordDto.email, forgotPasswordLink);
 
     return {
       message: "enviaremos instruções para redefinir sua senha",
