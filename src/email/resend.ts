@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Resend } from "resend";
+import { EmailNotSentException } from "./errors/email.error";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -12,7 +13,7 @@ export async function sendPasswordResetEmail(emailData: { email: string; link: s
   });
 
   if (error) {
-    return console.error({ error });
+    throw new EmailNotSentException();
   }
 
   console.log({ data });
