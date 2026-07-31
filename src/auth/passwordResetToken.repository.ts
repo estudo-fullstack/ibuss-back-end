@@ -1,7 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { Prisma } from "src/generated/prisma/client";
-import { UserNotFoundException } from "src/users/errors/users.error";
+import {
+  PasswordResetTokenNotFoundException,
+  PasswordResetTokenConflictException,
+} from "src/auth/errors/auth.error";
 
 @Injectable()
 export class PasswordResetTokenRepository {
@@ -69,7 +72,9 @@ export class PasswordResetTokenRepository {
 
     switch (error.code) {
       case "P2025":
-        throw new UserNotFoundException();
+        throw new PasswordResetTokenNotFoundException();
+      case "P2003":
+        throw new PasswordResetTokenConflictException();
       default:
         throw error;
     }
