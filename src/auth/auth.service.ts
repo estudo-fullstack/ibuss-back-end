@@ -134,6 +134,9 @@ export class AuthService {
     const storedTokenHash = await this.passwordResetTokenRepository.getTokenHash(
       resetPasswordDto.id
     );
+    if (storedTokenHash.user.status !== "ACTIVE") {
+      throw new BadRequestException("Unable to reset password!");
+    }
     const ferify = verifyPasswordResetToken(resetPasswordDto.token, storedTokenHash.tokenHash);
 
     if (!ferify || new Date() > storedTokenHash.expiresAt || storedTokenHash.usedAt) {
@@ -143,7 +146,14 @@ export class AuthService {
     const newPasswordHash = await bcrypt.hash(resetPasswordDto.password, 10);
 
     const processUpdate = this.prismaService.$transaction(async (tx) => {
-      await this.passwordResetTokenRepository.markAsUsed(resetPasswordDto.id, tx);
+      const updatedToken = await this.passwordResetTokenRepository.markAsUsed(
+        storedTokenHash.user.id,
+        tx
+      );
+
+      if (updatedToken.count === 0) {
+        throw new BadRequestException("Unable to reset password!");
+      }
 
       const updated = await this.authRepository.updatePasswordById(
         storedTokenHash.user.id,
@@ -155,6 +165,6 @@ export class AuthService {
 
     await infoPasswordResetEmail(storedTokenHash.user.email);
 
-    return processUpdate;
+    return { message: "Password updated successfully" };
   }
 }

@@ -34,6 +34,7 @@ export class PasswordResetTokenRepository {
             select: {
               id: true,
               email: true,
+              status: true,
             },
           },
         },
@@ -43,18 +44,14 @@ export class PasswordResetTokenRepository {
     }
   }
 
-  async markAsUsed(id: string, tx: Prisma.TransactionClient) {
+  async markAsUsed(userId: string, tx: Prisma.TransactionClient) {
     try {
-      return await tx.passwordResetToken.update({
+      return await tx.passwordResetToken.updateMany({
         where: {
-          id,
+          user: { id: userId },
         },
         data: {
           usedAt: new Date(),
-        },
-        select: {
-          id: true,
-          usedAt: true,
         },
       });
     } catch (error) {

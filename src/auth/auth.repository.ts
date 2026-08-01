@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma } from "src/generated/prisma/client";
+import { Prisma, UserStatus } from "src/generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { UserAlreadyExistsException, UserNotFoundException } from "../users/errors/users.error";
 
@@ -38,7 +38,7 @@ export class AuthRepository {
 
   async existsByEmail(email: string) {
     const user = await this.prismaService.user.findUnique({
-      where: { email },
+      where: { email, status: UserStatus.ACTIVE },
       select: {
         id: true,
       },
