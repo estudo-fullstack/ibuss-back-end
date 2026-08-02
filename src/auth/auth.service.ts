@@ -137,9 +137,9 @@ export class AuthService {
     if (storedTokenHash.user.status !== "ACTIVE") {
       throw new BadRequestException("Unable to reset password!");
     }
-    const ferify = verifyPasswordResetToken(resetPasswordDto.token, storedTokenHash.tokenHash);
+    const verify = verifyPasswordResetToken(resetPasswordDto.token, storedTokenHash.tokenHash);
 
-    if (!ferify || new Date() > storedTokenHash.expiresAt || storedTokenHash.usedAt) {
+    if (!verify || new Date() > storedTokenHash.expiresAt || storedTokenHash.usedAt) {
       throw new BadRequestException("Unable to reset password!");
     }
 
