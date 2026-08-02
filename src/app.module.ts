@@ -12,6 +12,12 @@ import { TicketModule } from "./ticket/ticket.module";
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: (config) => {
+        if (!config.PASSWORD_RESET_TOKEN_SECRET) {
+          throw new Error("PASSWORD_RESET_TOKEN_SECRET is required");
+        }
+        return config;
+      },
     }),
     UsersModule,
     PrismaModule,

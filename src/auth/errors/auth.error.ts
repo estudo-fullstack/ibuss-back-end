@@ -2,19 +2,25 @@ import { HttpStatus } from "@nestjs/common";
 import AppError from "../../common/errors/app-error.error";
 
 export class InvalidCredentialsException extends AppError {
-    constructor(message = "Credenciais inválidas") {
+  constructor(message = "Invalid credentials") {
     super(message, HttpStatus.UNAUTHORIZED);
-    }
+  }
 }
 
 export class UserInactiveException extends AppError {
-    constructor(message = "Usuário inativo") {
-    super(message, HttpStatus.UNAUTHORIZED);
-    }
+  constructor(message = "Inactive user") {
+    super(message, HttpStatus.FORBIDDEN);
+  }
 }
 
 export class UserSuspendedException extends AppError {
-    constructor(message = "Usuário suspenso") {
-    super(message, HttpStatus.UNAUTHORIZED);
-    }
+  constructor(message = "Suspended user") {
+    super(message, HttpStatus.FORBIDDEN);
+  }
+}
+
+export class PasswordResetTokenConflictException extends AppError {
+  constructor(message = "Conflict while creating password reset token") {
+    super(message, HttpStatus.CONFLICT);
+  }
 }

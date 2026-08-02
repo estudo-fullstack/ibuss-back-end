@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma } from "src/generated/prisma/client";
+import { Prisma, UserStatus } from "src/generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { UserAlreadyExistsException, UserNotFoundException } from "../users/errors/users.error";
 
@@ -36,6 +36,17 @@ export class AuthRepository {
     });
   }
 
+  async existsByEmail(email: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: { email, status: UserStatus.ACTIVE },
+      select: {
+        id: true,
+      },
+    });
+
+    return user;
+  }
+
   async findById(id: string) {
     return this.prismaService.user.findUnique({
       where: { id },
@@ -46,9 +57,11 @@ export class AuthRepository {
     });
   }
 
-  async updatePasswordById(id: string, passwordHash: string) {
+  async updatePasswordById(id: string, passwordHash: string, tx?: Prisma.TransactionClient) {
     try {
-      return await this.prismaService.user.update({
+      const client = this.getClient(tx);
+
+      return await client.user.update({
         data: { password: passwordHash },
         where: { id },
         select: {
@@ -60,6 +73,10 @@ export class AuthRepository {
     } catch (error) {
       this.handlePrismaError(error);
     }
+  }
+
+  private getClient(tx?: Prisma.TransactionClient) {
+    return tx ?? this.prismaService;
   }
 
   private handlePrismaError(error: unknown): never {
