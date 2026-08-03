@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { TicketRepository } from "./ticket.repository";
-import { TicketTokenService } from "./ticketToken.service";
 import { PurchaseTicketDto } from "./dto/create-ticket.dto";
 import { TicketStatusType } from "src/generated/prisma/client";
 import { TicketNotFoundException } from "./errors/ticket.error";
@@ -12,8 +11,7 @@ export class TicketService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly ticketRepository: TicketRepository,
-    private readonly walletRepository: WalletRepository,
-    private readonly ticketTokenService: TicketTokenService
+    private readonly walletRepository: WalletRepository
   ) {}
 
   async findManyByUserAndStatus(userId: string, status: TicketStatusType) {
@@ -42,15 +40,7 @@ export class TicketService {
       purchaseAt,
       expiresAt
     );
-
-    const generatedTicketId = purchasedTicket.ticket!.id;
-
-    const ticketToken = await this.ticketTokenService.generate(generatedTicketId);
-
-    return {
-      ticketToken: ticketToken,
-      ticket: purchasedTicket,
-    };
+    return purchasedTicket.ticket;
   }
 
   async markAsUsed(ticketId: string) {
