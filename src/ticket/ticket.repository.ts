@@ -63,6 +63,21 @@ export class TicketRepository {
     return ticket;
   }
 
+  async findByIdAndRoute(ticketId: string, routeId: string) {
+    try {
+      return await this.prismaService.ticket.findUniqueOrThrow({
+        where: { id: ticketId, routeId: routeId },
+        select: {
+          id: true,
+          expiresAt: true,
+          status: true,
+        },
+      });
+    } catch (error) {
+      return this.handlePrismaError(error);
+    }
+  }
+
   async markAsUsed(ticketId: string) {
     try {
       return this.prismaService.ticket.update({
