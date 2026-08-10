@@ -78,6 +78,19 @@ export class TicketRepository {
     }
   }
 
+  async getTicketPrice(routeId: string) {
+    try {
+      const routePrice = await this.prismaService.route.findUniqueOrThrow({
+        where: { id: routeId },
+        select: { price: true },
+      });
+
+      return routePrice.price.toNumber();
+    } catch (error) {
+      return this.handlePrismaError(error);
+    }
+  }
+
   async markAsUsed(ticketId: string) {
     try {
       return this.prismaService.ticket.update({

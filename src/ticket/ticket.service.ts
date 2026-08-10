@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { TicketRepository } from "./ticket.repository";
 import { PurchaseTicketDto } from "./dto/create-ticket.dto";
-import { TicketStatusType } from "src/generated/prisma/client";
+import { Prisma, TicketStatusType } from "src/generated/prisma/client";
 import { TicketNotFoundException } from "./errors/ticket.error";
 import { WalletRepository } from "src/wallet-transaction/wallet.repository";
 
@@ -22,10 +22,12 @@ export class TicketService {
     return this.ticketRepository.findOneByIdAndUser(userId, ticketId);
   }
 
-  async purchase(userId: string, purchaseData: PurchaseTicketDto) {
+  async purchase(userId: string, routeId: string) {
     const balance = await this.walletRepository.getBalance(userId);
 
-    if (balance < purchaseData.purchasePrice) {
+    const purchasePrice = await this.ticketRepository.getTicketPrice(routeId);
+
+    if (balance < purchasePrice) {
       throw new BadRequestException("Insufficient balance");
     }
 
@@ -36,7 +38,7 @@ export class TicketService {
 
     const purchasedTicket = await this.ticketRepository.purchase(
       userId,
-      purchaseData,
+      { routeId, purchasePrice },
       purchaseAt,
       expiresAt
     );
