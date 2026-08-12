@@ -7,7 +7,7 @@ import {
   buildPasswordResetLink,
   generatePasswordResetToken,
   verifyPasswordResetToken,
-} from "src/email/password-reset-token";
+} from "src/common/password-reset-token";
 import { sendPasswordResetEmail, infoPasswordResetEmail } from "src/email/resend";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateUserDto } from "./dto/create-user.dto";
