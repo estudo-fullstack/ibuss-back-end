@@ -41,6 +41,7 @@ export class AuthRepository {
       where: { email, status: UserStatus.ACTIVE },
       select: {
         id: true,
+        name: true,
       },
     });
 

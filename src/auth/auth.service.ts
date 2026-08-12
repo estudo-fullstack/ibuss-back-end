@@ -120,7 +120,9 @@ export class AuthService {
 
     const emailData = {
       email: forgotPasswordDto.email,
+      name: user.name,
       link: forgotPasswordLink,
+      expiresInMinutes: Math.round((expiresAt.getTime() - createdAt.getTime()) / 60000),
     };
 
     await sendPasswordResetEmail(emailData);
