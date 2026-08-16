@@ -78,6 +78,19 @@ export class TicketRepository {
     }
   }
 
+  async getTicketPrice(routeId: string) {
+    try {
+      const routePrice = await this.prismaService.route.findUniqueOrThrow({
+        where: { id: routeId },
+        select: { price: true },
+      });
+
+      return routePrice.price.toNumber();
+    } catch (error) {
+      return this.handlePrismaError(error);
+    }
+  }
+
   async markAsUsed(ticketId: string) {
     try {
       return this.prismaService.ticket.update({
@@ -113,7 +126,8 @@ export class TicketRepository {
 
   async purchase(
     userId: string,
-    purchaseData: PurchaseTicketDto,
+    routeId: string,
+    purchasePrice: number,
     purchaseAt: Date,
     expiresAt: Date
   ) {
@@ -121,13 +135,13 @@ export class TicketRepository {
       return await this.prismaService.walletTransaction.create({
         data: {
           userId,
-          transactionAmount: new Prisma.Decimal(purchaseData.purchasePrice),
+          transactionAmount: new Prisma.Decimal(purchasePrice),
           transactionType: TransactionType.WITHDRAWAL,
           ticket: {
             create: {
               userId,
-              routeId: purchaseData.routeId,
-              purchasePrice: new Prisma.Decimal(purchaseData.purchasePrice),
+              routeId: routeId,
+              purchasePrice: new Prisma.Decimal(purchasePrice),
               purchaseAt,
               expiresAt,
             },
