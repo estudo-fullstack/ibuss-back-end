@@ -38,7 +38,8 @@ export class TicketService {
 
     const purchasedTicket = await this.ticketRepository.purchase(
       userId,
-      { routeId, purchasePrice },
+      routeId,
+      purchasePrice,
       purchaseAt,
       expiresAt
     );

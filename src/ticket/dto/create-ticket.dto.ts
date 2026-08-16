@@ -1,10 +1,7 @@
-import { IsString, IsNumber, Min } from "class-validator";
+import { IsString, IsNumber, Min, IsUUID } from "class-validator";
 
 export class PurchaseTicketDto {
   @IsString()
+  @IsUUID()
   routeId!: string;
-
-  @IsNumber()
-  @Min(0.01)
-  purchasePrice!: number;
 }

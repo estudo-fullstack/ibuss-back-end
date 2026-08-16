@@ -41,8 +41,8 @@ export class TicketController {
   }
 
   @Post("purchase")
-  purchase(@Req() req: Request, @Body("routeId") routeId: string) {
-    return this.ticketService.purchase(req.user!.id, routeId);
+  purchase(@Req() req: Request, @Body() purchaseData: PurchaseTicketDto) {
+    return this.ticketService.purchase(req.user!.id, purchaseData.routeId);
   }
 
   @Patch(":id/cancel")
