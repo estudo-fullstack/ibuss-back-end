@@ -108,7 +108,7 @@ async function main() {
     {
       name: "alice",
       cpf: "52998224725",
-      email: "alice@prisma.com",
+      email: "delivered+alice@resend.dev",
       password: passwordHash,
       phoneNumber: "11999999999",
       avatarId: "avatar1",
@@ -116,7 +116,7 @@ async function main() {
     {
       name: "bob",
       cpf: "16899535009",
-      email: "bob@prisma.com",
+      email: "delivered+bob@resend.dev",
       password: passwordHash,
       phoneNumber: "11999999999",
       avatarId: "avatar2",
@@ -124,7 +124,7 @@ async function main() {
     {
       name: "carol",
       cpf: "45317828791",
-      email: "carol@prisma.com",
+      email: "delivered+carol@resend.dev",
       password: passwordHash,
       phoneNumber: "11999999999",
       avatarId: "avatar3",
