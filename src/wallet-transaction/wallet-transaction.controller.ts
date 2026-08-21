@@ -26,8 +26,8 @@ export class WalletTransactionController {
   }
 
   @Get("transactions")
-  async getExtract(@Req() req: Request, @Query() { type }: ExtractQueryDto) {
+  async getExtract(@Req() req: Request, @Query() queryDto: ExtractQueryDto) {
     const userId = req.user!.id;
-    return this.walletTransactionService.getExtract(userId, type);
+    return this.walletTransactionService.getExtract(userId, queryDto);
   }
 }

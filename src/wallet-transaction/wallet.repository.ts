@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma, TransactionType } from "../generated/prisma/client";
+import { ExtractQueryDto } from "./dto/extract-query-dto";
 
 @Injectable()
 export class WalletRepository {
@@ -48,11 +49,16 @@ export class WalletRepository {
     });
   }
 
-  async getExtract(userId: string, type?: TransactionType) {
+  async getExtract(userId: string, queryDto?: ExtractQueryDto) {
     const transactions = await this.prismaService.walletTransaction.findMany({
       where: {
         userId,
-        ...(type && { transactionType: type }),
+        ...(queryDto?.type && { transactionType: queryDto.type }),
+        ...(queryDto?.timePeriodInDays && {
+          createdAt: {
+            gte: new Date(Date.now() - queryDto.timePeriodInDays * 24 * 60 * 60 * 1000),
+          },
+        }),
       },
       orderBy: {
         createdAt: "desc",

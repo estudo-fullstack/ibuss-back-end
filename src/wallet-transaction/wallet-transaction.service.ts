@@ -4,8 +4,8 @@ import {
   InvalidTransactionAmountException,
   WalletUserNotFoundException,
 } from "./errors/wallet-transaction.error";
-import { TransactionType } from "../generated/prisma/enums";
 import { WalletRepository } from "./wallet.repository";
+import { ExtractQueryDto } from "./dto/extract-query-dto";
 
 @Injectable()
 export class WalletTransactionService {
@@ -34,7 +34,7 @@ export class WalletTransactionService {
     }
   }
 
-  async getExtract(userId: string, type?: TransactionType) {
-    return this.walletRepository.getExtract(userId, type);
+  async getExtract(userId: string, queryDto?: ExtractQueryDto) {
+    return this.walletRepository.getExtract(userId, queryDto);
   }
 }
