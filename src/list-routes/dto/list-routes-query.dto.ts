@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { Transform } from "class-transformer";
 
 export class ListRoutesQueryDto {
@@ -11,4 +11,11 @@ export class ListRoutesQueryDto {
   @IsNotEmpty()
   @Transform(({ value }: { value: string }) => value?.trim())
   destination!: string;
+
+  @IsOptional()
+  @Transform(({ value }: { value: string }) => value?.toLowerCase())
+  @IsIn(["asc", "desc"], {
+    message: `priceOrder must be 'asc' or 'desc'`,
+  })
+  priceOrder?: "asc" | "desc";
 }

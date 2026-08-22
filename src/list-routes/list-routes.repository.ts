@@ -6,7 +6,11 @@ import { Prisma, RouteStatusType } from "src/generated/prisma/client";
 export class ListRoutesRepository {
   constructor(private prismaService: PrismaService) {}
 
-  async findCompaniesByRoute(query: { origin: string; destination: string }) {
+  async findCompaniesByRoute(query: {
+    origin: string;
+    destination: string;
+    priceOrder?: "asc" | "desc";
+  }) {
     try {
       return await this.prismaService.route.findMany({
         where: {
@@ -20,7 +24,11 @@ export class ListRoutesRepository {
           },
           status: RouteStatusType.ACTIVE,
         },
+        orderBy: {
+          price: query.priceOrder ?? "asc",
+        },
         select: {
+          id: true,
           routeNumber: true,
           origin: true,
           destination: true,
